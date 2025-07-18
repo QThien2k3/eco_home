@@ -1,46 +1,21 @@
-/*************************************************************
-  Smart Home System with Solar Power Management + Firebase
-  INSTANT RESPONSE VERSION - ENHANCED BATTERY SOC SYSTEM
-  🔧 FIXED: ESP32 SD library conflict resolution
-  🔧 FIXED: Firebase ESP32 Client v4.4.17 compatibility
-  🔧 NEW: Advanced 4S Li-ion SoC calculation with dual methods
-  🔧 NEW: Voltage curve + Coulomb counting + Time estimation
-  
-  Components:
-  - Solar Panel 18V-15W with MPPT CN3722
-  - LiPo 4x18650 4800mAh with BMS (9V-16.8V, 12C discharge)
-  - 12V Adapter backup with IRF4905 switching
-  - 3x INA219 for power monitoring (Solar->LiPo, LiPo->System, Adapter->System)
-  - DHT22 for temperature/humidity
-  - MQ-2 for gas detection
-  - Light sensor (digital out)
-  - 8 Relays (4 lights, 3 fans, 1 auto light)
-  - Power MUX control (3 gate pins)
- *************************************************************/
-
-// 🔧 CRITICAL: Disable SD filesystem support to prevent conflict
 #define FIREBASE_DISABLE_SD_FILESYSTEM
 
 #include <Arduino.h>
 #include <WiFi.h>
 #include <Wire.h>
 #include <Adafruit_INA219.h>
-
-// 🔧 FIXED: Use DHT22 library v1.0.7 by dvarrel  
 #include <DHT22.h>
-
-// 🔧 FIXED: Use Firebase ESP32 Client v4.4.17 (Mobizt)
 #include <FirebaseESP32.h>
 #include <ArduinoOTA.h>
 
-// 🔧 FIXED: Firebase configuration
-const char* ssid = "THIEN NHAN";
-const char* password = "13022021";
+// Firebase configuration
+const char* ssid = "   ";
+const char* password = "    ";
 
 #define FIREBASE_HOST "smart-home-b7a03-default-rtdb.asia-southeast1.firebasedatabase.app"
 #define FIREBASE_AUTH "AIzaSyAO-6fXi3A_gLZz_uf9JKpQUOuxLfu6r1I"
 
-// 🔧 NEW: Power MUX Gate Pins
+//  Power MUX Gate Pins
 #define GATE_SOLAR_PIN 5
 #define GATE_BATTERY_PIN 18
 #define GATE_ADAPTER_PIN 23
@@ -65,7 +40,7 @@ const char* password = "13022021";
 #define INA219_BATTERY_ADDR  0x41
 #define INA219_ADAPTER_ADDR  0x44
 
-// 🔧 OPTIMIZED: INA219 Shunt Resistor Configuration
+//  INA219 Shunt Resistor Configuration
 #define SHUNT_RESISTOR_VALUE 0.01  // 0.01 ohm shunt resistor
 
 // 🔋 NEW: Enhanced Battery SoC Constants
@@ -73,24 +48,38 @@ const char* password = "13022021";
 #define BATTERY_NOMINAL_VOLTAGE   14.8    // 4S Li-ion nominal (3.7V * 4)
 #define BATTERY_MIN_VOLTAGE       12.0    // 4S Li-ion minimum (3.0V * 4)
 #define BATTERY_MAX_VOLTAGE       16.8    // 4S Li-ion maximum (4.2V * 4)
-#define SOC_VOLTAGE_CURVE_POINTS  12      // Number of voltage curve points (FIXED: was 11, now 12)
+#define SOC_VOLTAGE_CURVE_POINTS  12      // Number of voltage curve points
 
-// Gas sensor constants
-#define GAS_WARMUP_TIME     120000  // 2 minutes warmup
-#define GAS_CALIBRATION_TIME 30000  // 30 seconds calibration
-#define GAS_SAMPLES         10      // Number of samples for baseline
+// 🆕 NEW: Auto Temperature Control Constants
+#define DEFAULT_TEMP_THRESHOLD     28.0    // Default temperature threshold (°C)
+#define TEMP_HYSTERESIS           0.5     // ±0.5°C hysteresis
+#define TEMP_CHECK_INTERVAL       5000    // Check temperature every 5 seconds
+#define TEMP_THRESHOLD_MIN        16.0    // Minimum settable threshold
+#define TEMP_THRESHOLD_MAX        40.0    // Maximum settable threshold
 
-// 🔧 OPTIMIZED: Power thresholds with better precision
+// 🆕 NEW: Enhanced Gas Detection Constants
+#define GAS_WARMUP_TIME           120000  // 2 minutes warmup
+#define GAS_CALIBRATION_TIME      30000   // 30 seconds calibration
+#define GAS_SAMPLES              10       // Number of samples for baseline
+#define GAS_CHECK_INTERVAL       2000     // Check gas every 2 seconds
+#define GAS_PPM_SMOOTHING        5        // Moving average for PPM readings
+
+// 🆕 NEW: Default Gas Thresholds (PPM)
+#define DEFAULT_GAS_THRESHOLD_1   200     // Level 1: Warning (turn on 1 fan)
+#define DEFAULT_GAS_THRESHOLD_2   500     // Level 2: Alert (turn on 2 fans)
+#define DEFAULT_GAS_THRESHOLD_3   800     // Level 3: Danger (turn on 3 fans)
+
+//  Power thresholds with better precision
 #define MIN_POWER_THRESHOLD_MW    50    // 0.05W minimum (reduced for better sensitivity)
 #define DISPLAY_POWER_THRESHOLD_MW 500  // 0.5W minimum to display energy flow
-#define MAX_POWER_DISPLAY_MW      20000 // 20W maximum power for display (increased from 15W)
+#define MAX_POWER_DISPLAY_MW      20000 // 20W maximum power for display
 
-// 🔧 FIXED: Firebase objects (Mobizt v4.4.17)
+// Firebase objects (Mobizt v4.4.17)
 FirebaseData fbdo;
 FirebaseConfig config;
 FirebaseAuth auth;
 
-// 🔧 FIXED: DHT22 sensor object (dvarrel library)
+//  DHT22 sensor object (dvarrel library)
 DHT22 dht22(DHT_PIN);
 
 // ========== BASE CLASSES ==========
@@ -187,7 +176,7 @@ private:
     int currentPowerSource = 0;
     float totalSystemPower = 0;
     
-    // 🔋 NEW: Voltage-SoC lookup table for 4S Li-ion (18650) - FIXED: Now has 12 points
+    // 🔋 NEW: Voltage-SoC lookup table for 4S Li-ion (18650)
     const float voltage_soc_curve[SOC_VOLTAGE_CURVE_POINTS][2] = {
         {12.0, 0},    // 0% - 3.0V per cell
         {12.4, 5},    // 5% - 3.1V per cell
@@ -420,7 +409,7 @@ public:
     PowerData getAdapterData() const { return adapterData; }
     BatteryState getBatteryState() const { return batteryState; }
     
-    // 🔧 NEW: Power MUX control function moved to PowerManager class
+    // 🔧 NEW: Power MUX control function
     void updatePowerMux() {
         // Set all gates to HIGH (disabled) first
         digitalWrite(GATE_SOLAR_PIN, HIGH);
@@ -683,7 +672,8 @@ public:
     float getHumidity() const { return humidity; }
 };
 
-class GasSensor : public Sensor {
+// 🔧 ENHANCED: Gas Sensor with Dynamic Calibration and Conflict Resolution
+class EnhancedGasSensor : public Sensor {
 private:
     int gasValue = 0;
     float gasPPM = 0;
@@ -691,86 +681,373 @@ private:
     unsigned long startTime = 0;
     unsigned long lastReading = 0;
     
-    const int CLEAN_AIR_VALUE = 100;
-    const float WARNING_THRESHOLD = 200.0;
-    const float DANGER_THRESHOLD = 800.0;
-    const float MAX_REASONABLE_PPM = 2000.0;
+    // 🔧 NEW: Dynamic Calibration System
+    bool isWarmupComplete = false;
+    bool isCalibrationComplete = false;
+    float dynamicR0 = 0;
+    float calibrationSamples[GAS_SAMPLES];
+    int calibrationIndex = 0;
+    unsigned long calibrationStartTime = 0;
     
-    const float RL = 10.0;
-    const float RO_CLEAN_AIR = 9.83;
+    // Moving average for PPM smoothing
+    float ppmHistory[GAS_PPM_SMOOTHING];
+    int ppmHistoryIndex = 0;
+    bool historyFilled = false;
+    
+    // Enhanced calibration parameters
+    const float R_LOAD = 10.0;        // Load resistance in kΩ
+    const float DEFAULT_R0 = 9.83;    // Fallback R0 value
+    const float CURVE_A = 574.25;     // Curve fitting parameter A
+    const float CURVE_B = -2.222;     // Curve fitting parameter B (slope)
+    
+    // 3-Level thresholds
+    float gasThreshold1 = DEFAULT_GAS_THRESHOLD_1;
+    float gasThreshold2 = DEFAULT_GAS_THRESHOLD_2;
+    float gasThreshold3 = DEFAULT_GAS_THRESHOLD_3;
+    
+    int currentGasLevel = 0;
+    int lastSentGasLevel = -1; // Track last sent level to avoid spam
     
 public:
-    GasSensor(int pin) : Sensor(pin, "gas") {
+    EnhancedGasSensor(int pin) : Sensor(pin, "enhancedGas") {
         startTime = millis();
+        // Initialize arrays
+        for (int i = 0; i < GAS_PPM_SMOOTHING; i++) {
+            ppmHistory[i] = 0;
+        }
+        for (int i = 0; i < GAS_SAMPLES; i++) {
+            calibrationSamples[i] = 0;
+        }
     }
     
     void init() override {
         pinMode(pin, INPUT);
-        Serial.println("MQ-2 gas sensor initialized");
+        loadGasThresholds();
+        Serial.println("🔥 Enhanced MQ-2 with Dynamic Calibration initialized");
+        Serial.printf("🔥 Calibration: Warmup=%ds, Calibration=%ds, Samples=%d\n", 
+                     GAS_WARMUP_TIME/1000, GAS_CALIBRATION_TIME/1000, GAS_SAMPLES);
     }
     
     void read() override {
         unsigned long currentTime = millis();
         
+        if (currentTime - lastReading < GAS_CHECK_INTERVAL) {
+            return;
+        }
+        
         gasValue = analogRead(pin);
         
-        if (currentTime - startTime < 20000) {
-            gasPPM = 0;
-        } else {
-            float voltage = (gasValue / 4095.0) * 3.3;
-            float Rs = ((3.3 - voltage) / voltage) * RL;
-            float ratio = Rs / RO_CLEAN_AIR;
-            
-            if (ratio > 0.1) {
-                gasPPM = 613.9 * pow(ratio, -2.074);
-            } else {
-                gasPPM = 0;
-            }
-            
-            if (gasValue > CLEAN_AIR_VALUE) {
-                float simplePPM = (gasValue - CLEAN_AIR_VALUE) * 2.0;
+        // 🔧 FIXED: Proper calibration sequence
+        if (!isWarmupComplete) {
+            if (currentTime - startTime >= GAS_WARMUP_TIME) {
+                isWarmupComplete = true;
+                calibrationStartTime = currentTime;
+                Serial.println("🔥 Gas sensor warmup complete - Starting calibration...");
                 
-                if (gasPPM > MAX_REASONABLE_PPM || gasPPM < 0) {
-                    gasPPM = simplePPM;
+                // Send warmup complete status
+                if (Firebase.ready()) {
+                    Firebase.setString(fbdo, "/sensors/gas/status", "calibrating");
                 }
-            }
-            
-            if (gasPPM < 0) gasPPM = 0;
-            if (gasPPM > MAX_REASONABLE_PPM) gasPPM = MAX_REASONABLE_PPM;
-        }
-        
-        if (Firebase.ready()) {
-            Firebase.setInt(fbdo, "/sensors/gas/value", gasValue);
-            Firebase.setFloat(fbdo, "/sensors/gas/ppm", gasPPM);
-            Firebase.setBool(fbdo, "/sensors/gas/isCalibrated", true);
-            Firebase.setTimestamp(fbdo, "/sensors/gas/lastUpdate");
-            
-            if (gasPPM > DANGER_THRESHOLD && !alertSent) {
-                Firebase.setBool(fbdo, "/alerts/gasHigh", true);
-                Firebase.setString(fbdo, "/alerts/gasLevel", "DANGER");
-                Firebase.setString(fbdo, "/alerts/gasMessage", "NGUY HIỂM! Nồng độ khí gas rất cao: " + String(gasPPM, 0) + " ppm");
-                Firebase.setTimestamp(fbdo, "/alerts/gasTime");
-                alertSent = true;
-            } else if (gasPPM > WARNING_THRESHOLD && gasPPM <= DANGER_THRESHOLD) {
-                Firebase.setBool(fbdo, "/alerts/gasHigh", true);
-                Firebase.setString(fbdo, "/alerts/gasLevel", "WARNING");
-                Firebase.setString(fbdo, "/alerts/gasMessage", "Cảnh báo: Nồng độ khí gas cao: " + String(gasPPM, 0) + " ppm");
-                Firebase.setTimestamp(fbdo, "/alerts/gasTime");
-            } else if (gasPPM <= WARNING_THRESHOLD * 0.8) {
-                if (alertSent) {
-                    alertSent = false;
-                }
-                Firebase.setBool(fbdo, "/alerts/gasHigh", false);
-                Firebase.setString(fbdo, "/alerts/gasLevel", "NORMAL");
+            } else {
+                // During warmup, don't calculate PPM
+                gasPPM = 0;
+                updateFirebaseBasicData();
+                lastReading = currentTime;
+                return;
             }
         }
         
+        // 🔧 NEW: Dynamic calibration process
+        if (isWarmupComplete && !isCalibrationComplete) {
+            if (currentTime - calibrationStartTime < GAS_CALIBRATION_TIME) {
+                // Collect calibration samples
+                if (calibrationIndex < GAS_SAMPLES) {
+                    float voltage = (gasValue / 4095.0) * 3.3;
+                    float Rs = ((3.3 - voltage) / voltage) * R_LOAD;
+                    calibrationSamples[calibrationIndex] = Rs;
+                    calibrationIndex++;
+                    
+                    Serial.printf("🔥 Calibration sample %d/%d: Rs=%.2f kΩ (ADC=%d)\n", 
+                                 calibrationIndex, GAS_SAMPLES, Rs, gasValue);
+                }
+                
+                gasPPM = 0; // Don't calculate PPM during calibration
+                updateFirebaseBasicData();
+                lastReading = currentTime;
+                return;
+            } else {
+                // Calibration complete - calculate R0
+                completeDynamicCalibration();
+            }
+        }
+        
+        // 🔧 FIXED: Only calculate PPM after calibration complete
+        if (isCalibrationComplete) {
+            gasPPM = calculateEnhancedPPM(gasValue);
+            
+            // Apply moving average smoothing
+            ppmHistory[ppmHistoryIndex] = gasPPM;
+            ppmHistoryIndex = (ppmHistoryIndex + 1) % GAS_PPM_SMOOTHING;
+            if (ppmHistoryIndex == 0) historyFilled = true;
+            
+            if (historyFilled) {
+                float sum = 0;
+                for (int i = 0; i < GAS_PPM_SMOOTHING; i++) {
+                    sum += ppmHistory[i];
+                }
+                gasPPM = sum / GAS_PPM_SMOOTHING;
+            }
+            
+            // Check thresholds only after calibration
+            checkGasThresholds();
+        } else {
+            gasPPM = 0;
+        }
+        
+        updateFirebaseBasicData();
         lastReading = currentTime;
     }
     
-    int getGasValue() const { return gasValue; }
+    bool isCalibrated() const { 
+        return isWarmupComplete && isCalibrationComplete; 
+    }
+    
     float getGasPPM() const { return gasPPM; }
-    bool getIsCalibrated() const { return (millis() - startTime) >= 20000; }
+    int getGasLevel() const { return currentGasLevel; }
+    
+    void updateGasThresholds(float threshold1, float threshold2, float threshold3) {
+        gasThreshold1 = constrain(threshold1, 50, 2000);
+        gasThreshold2 = constrain(threshold2, 100, 2000);
+        gasThreshold3 = constrain(threshold3, 200, 2000);
+        
+        // Ensure ascending order
+        if (gasThreshold2 <= gasThreshold1) gasThreshold2 = gasThreshold1 + 50;
+        if (gasThreshold3 <= gasThreshold2) gasThreshold3 = gasThreshold2 + 100;
+        
+        Serial.printf("🔥 Gas thresholds updated: %.0f/%.0f/%.0f PPM\n", 
+                     gasThreshold1, gasThreshold2, gasThreshold3);
+    }
+    
+private:
+    void completeDynamicCalibration() {
+        // Calculate average R0 from calibration samples
+        float totalR0 = 0;
+        int validSamples = 0;
+        
+        for (int i = 0; i < GAS_SAMPLES; i++) {
+            if (calibrationSamples[i] > 0 && calibrationSamples[i] < 100) {
+                totalR0 += calibrationSamples[i];
+                validSamples++;
+            }
+        }
+        
+        if (validSamples >= GAS_SAMPLES/2) {
+            dynamicR0 = totalR0 / validSamples;
+            isCalibrationComplete = true;
+            
+            Serial.printf("🔥 ✅ Dynamic calibration complete! R0 = %.2f kΩ (from %d samples)\n", 
+                         dynamicR0, validSamples);
+            
+            // Send calibration complete status
+            if (Firebase.ready()) {
+                Firebase.setString(fbdo, "/sensors/gas/status", "ready");
+                Firebase.setFloat(fbdo, "/sensors/gas/calibration/r0", dynamicR0);
+                Firebase.setInt(fbdo, "/sensors/gas/calibration/samples", validSamples);
+                Firebase.setTimestamp(fbdo, "/sensors/gas/calibration/completedAt");
+            }
+        } else {
+            // Fallback to default R0
+            dynamicR0 = DEFAULT_R0;
+            isCalibrationComplete = true;
+            
+            Serial.printf("🔥 ⚠️ Calibration failed - using default R0 = %.2f kΩ\n", dynamicR0);
+            
+            if (Firebase.ready()) {
+                Firebase.setString(fbdo, "/sensors/gas/status", "fallback");
+                Firebase.setFloat(fbdo, "/sensors/gas/calibration/r0", dynamicR0);
+            }
+        }
+    }
+    
+    float calculateEnhancedPPM(int rawValue) {
+        // Convert ADC to voltage
+        float voltage = (rawValue / 4095.0) * 3.3;
+        
+        // Calculate sensor resistance
+        float Rs = ((3.3 - voltage) / voltage) * R_LOAD;
+        
+        // Calculate Rs/R0 ratio using dynamic R0
+        float ratio = Rs / dynamicR0;
+        
+        // 🔧 FIXED: Better fallback logic
+        if (ratio > 0.3 && ratio < 10.0) {
+            // Use curve fitting for valid range
+            float ppm = CURVE_A * pow(ratio, CURVE_B);
+            return constrain(ppm, 0, 10000);
+        } else if (ratio >= 10.0) {
+            // Clean air condition
+            return 0;
+        } else {
+            // Low ratio - possible high concentration or sensor issue
+            return constrain((rawValue - 1000) * 1.5, 0, 5000);
+        }
+    }
+    
+    void checkGasThresholds() {
+        int newGasLevel = 0;
+        
+        if (gasPPM >= gasThreshold3) {
+            newGasLevel = 3; // DANGER
+        } else if (gasPPM >= gasThreshold2) {
+            newGasLevel = 2; // ALERT
+        } else if (gasPPM >= gasThreshold1) {
+            newGasLevel = 1; // WARNING
+        }
+        
+        // Only send commands if level actually changed
+        if (newGasLevel != currentGasLevel) {
+            currentGasLevel = newGasLevel;
+            
+            String levelNames[] = {"NORMAL", "WARNING", "ALERT", "DANGER"};
+            Serial.printf("🔥 Gas level changed: %s (%.0f PPM)\n", 
+                         levelNames[newGasLevel].c_str(), gasPPM);
+            
+            // Update Firebase alerts
+            updateFirebaseAlerts(newGasLevel);
+            
+            // Trigger auto fan control with conflict resolution
+            triggerAutoFanControlSafe(newGasLevel);
+        }
+    }
+    
+    void updateFirebaseAlerts(int gasLevel) {
+        if (!Firebase.ready()) return;
+        
+        String levelNames[] = {"NORMAL", "WARNING", "WARNING", "DANGER"};
+        String alertLevels[] = {"NORMAL", "WARNING", "WARNING", "DANGER"};
+        
+        Firebase.setBool(fbdo, "/alerts/gasHigh", gasLevel > 0);
+        Firebase.setString(fbdo, "/alerts/gasLevel", alertLevels[gasLevel]);
+        Firebase.setString(fbdo, "/alerts/gasMessage", 
+            String("Gas ") + levelNames[gasLevel] + ": " + String(gasPPM, 0) + " ppm");
+        Firebase.setTimestamp(fbdo, "/alerts/gasTime");
+        
+        Firebase.setInt(fbdo, "/status/gasLevel", gasLevel);
+        Firebase.setString(fbdo, "/status/gasLevelName", levelNames[gasLevel]);
+    }
+    
+    void updateFirebaseBasicData() {
+        if (!Firebase.ready()) return;
+        
+        Firebase.setInt(fbdo, "/sensors/gas/value", gasValue);
+        Firebase.setFloat(fbdo, "/sensors/gas/ppm", gasPPM);
+        Firebase.setBool(fbdo, "/sensors/gas/isCalibrated", isCalibrated());
+        Firebase.setTimestamp(fbdo, "/sensors/gas/lastUpdate");
+        
+        Firebase.setInt(fbdo, "/sensors/gas/level", currentGasLevel);
+        Firebase.setFloat(fbdo, "/sensors/gas/thresholds/warning", gasThreshold1);
+        Firebase.setFloat(fbdo, "/sensors/gas/thresholds/alert", gasThreshold2);
+        Firebase.setFloat(fbdo, "/sensors/gas/thresholds/danger", gasThreshold3);
+    }
+    
+    void loadGasThresholds() {
+        if (!Firebase.ready()) return;
+        
+        if (Firebase.getFloat(fbdo, "/settings/gasThresholds/warning")) {
+            gasThreshold1 = fbdo.floatData();
+        }
+        if (Firebase.getFloat(fbdo, "/settings/gasThresholds/alert")) {
+            gasThreshold2 = fbdo.floatData();
+        }
+        if (Firebase.getFloat(fbdo, "/settings/gasThresholds/danger")) {
+            gasThreshold3 = fbdo.floatData();
+        }
+    }
+    
+    // 🔧 NEW: Safe auto fan control with conflict resolution
+    void triggerAutoFanControlSafe(int gasLevel) {
+        if (!Firebase.ready()) return;
+        
+        Serial.printf("🔥 Checking auto fan control for gas level %d\n", gasLevel);
+        
+        // Check current fan states before sending auto commands
+        bool fan1Current = false, fan2Current = false, fan3Current = false;
+        
+        if (Firebase.getBool(fbdo, "/devices/fan1/state")) {
+            fan1Current = fbdo.boolData();
+        }
+        if (Firebase.getBool(fbdo, "/devices/fan2/state")) {
+            fan2Current = fbdo.boolData();
+        }
+        if (Firebase.getBool(fbdo, "/devices/fan3/state")) {
+            fan3Current = fbdo.boolData();
+        }
+        
+        // 🔧 FIXED: Only send auto commands if state needs to change
+        switch (gasLevel) {
+            case 0: // Normal - Turn off fans only if they're on
+                if (fan1Current) Firebase.setBool(fbdo, "/auto_commands/fan1", false);
+                if (fan2Current) Firebase.setBool(fbdo, "/auto_commands/fan2", false);
+                if (fan3Current) Firebase.setBool(fbdo, "/auto_commands/fan3", false);
+                break;
+                
+            case 1: // Warning - Turn on kitchen fan if not already on
+                if (!fan3Current) {
+                    Firebase.setBool(fbdo, "/auto_commands/fan3", true);
+                    Serial.println("🔥 Auto: Turning ON kitchen fan (fan3)");
+                }
+                break;
+                
+            case 2: // Alert - Turn on kitchen + bedroom fans if not already on
+                if (!fan3Current) {
+                    Firebase.setBool(fbdo, "/auto_commands/fan3", true);
+                    Serial.println("🔥 Auto: Turning ON kitchen fan (fan3)");
+                }
+                if (!fan2Current) {
+                    Firebase.setBool(fbdo, "/auto_commands/fan2", true);
+                    Serial.println("🔥 Auto: Turning ON bedroom fan (fan2)");
+                }
+                break;
+                
+            case 3: // Danger - Turn on all fans if not already on
+                if (!fan1Current) {
+                    Firebase.setBool(fbdo, "/auto_commands/fan1", true);
+                    Serial.println("🔥 Auto: Turning ON living room fan (fan1)");
+                }
+                if (!fan2Current) {
+                    Firebase.setBool(fbdo, "/auto_commands/fan2", true);
+                    Serial.println("🔥 Auto: Turning ON bedroom fan (fan2)");
+                }
+                if (!fan3Current) {
+                    Firebase.setBool(fbdo, "/auto_commands/fan3", true);
+                    Serial.println("🔥 Auto: Turning ON kitchen fan (fan3)");
+                }
+                break;
+        }
+        
+        // Log the event
+        if (gasLevel > 0) {
+            logGasAutoFanEvent(gasLevel);
+        }
+    }
+    
+    void logGasAutoFanEvent(int gasLevel) {
+        if (!Firebase.ready()) return;
+        
+        unsigned long timestamp = millis() / 1000;
+        String logId = String(timestamp) + "_gas_fan_" + String(random(1000, 9999));
+        String logPath = "/history/" + logId;
+        
+        FirebaseJson json;
+        json.set("type", "gas_auto_fan_control");
+        json.set("timestamp", timestamp);
+        json.set("device", "ESP32_HOME_GAS_SYSTEM");
+        json.set("gasLevel", gasLevel);
+        json.set("gasPPM", gasPPM);
+        json.set("fansActivated", gasLevel);
+        
+        Firebase.setJSON(fbdo, logPath, json);
+    }
 };
 
 class LightSensor : public Sensor {
@@ -839,14 +1116,184 @@ public:
     }
 };
 
-// ========== MAIN SMART HOME CLASS ==========
+// 🔧 ENHANCED: Auto Temperature Controller with Immediate Response and Conflict Resolution
+class AutoTemperatureController {
+private:
+    float temperatureThreshold = DEFAULT_TEMP_THRESHOLD;
+    bool autoTempEnabled = true;
+    bool fanState = false;
+    unsigned long lastTempCheck = 0;
+    bool coolingMode = false;
+    float lastTemperature = 0; // Store last temperature for immediate response
+    
+public:
+    void init() {
+        loadTemperatureSettings();
+        Serial.printf("🌡️ Auto Temperature Controller initialized - Threshold: %.1f°C\n", temperatureThreshold);
+    }
+    
+    void checkTemperature(float currentTemp) {
+        unsigned long currentTime = millis();
+        
+        if (currentTime - lastTempCheck < TEMP_CHECK_INTERVAL) {
+            return;
+        }
+        
+        if (!autoTempEnabled || currentTemp <= 0) {
+            lastTempCheck = currentTime;
+            return;
+        }
+        
+        lastTemperature = currentTemp; // Store for immediate response
+        processTemperatureLogic(currentTemp);
+        lastTempCheck = currentTime;
+    }
+    
+    // 🔧 NEW: Immediate temperature response
+    void processTemperatureLogic(float currentTemp) {
+        bool shouldTurnOnFan = false;
+        
+        if (!coolingMode) {
+            // Fan is off, check if we need to turn it on
+            if (currentTemp > temperatureThreshold + TEMP_HYSTERESIS) {
+                shouldTurnOnFan = true;
+                coolingMode = true;
+                Serial.printf("🌡️ Temp %.1f°C > %.1f°C + %.1f°C hysteresis - AUTO ON fan1\n", 
+                             currentTemp, temperatureThreshold, TEMP_HYSTERESIS);
+            }
+        } else {
+            // Fan is on, check if we can turn it off
+            if (currentTemp < temperatureThreshold - TEMP_HYSTERESIS) {
+                shouldTurnOnFan = false;
+                coolingMode = false;
+                Serial.printf("🌡️ Temp %.1f°C < %.1f°C - %.1f°C hysteresis - AUTO OFF fan1\n", 
+                             currentTemp, temperatureThreshold, TEMP_HYSTERESIS);
+            } else {
+                shouldTurnOnFan = true; // Keep fan on
+            }
+        }
+        
+        // Update fan state if needed
+        if (shouldTurnOnFan != fanState) {
+            fanState = shouldTurnOnFan;
+            sendFanCommandSafe(shouldTurnOnFan);
+            updateFirebaseStatus(currentTemp);
+            logTemperatureControlEvent(currentTemp, shouldTurnOnFan);
+        }
+    }
+    
+    // 🔧 FIXED: Immediate response to settings changes
+    void updateSettings(float newThreshold, bool enabled) {
+        if (newThreshold >= TEMP_THRESHOLD_MIN && newThreshold <= TEMP_THRESHOLD_MAX) {
+            temperatureThreshold = newThreshold;
+        }
+        autoTempEnabled = enabled;
+        
+        Serial.printf("🌡️ Settings updated - Threshold: %.1f°C, Enabled: %s\n", 
+                     temperatureThreshold, autoTempEnabled ? "YES" : "NO");
+        
+        // Save to Firebase
+        if (Firebase.ready()) {
+            Firebase.setFloat(fbdo, "/settings/temperatureThreshold", temperatureThreshold);
+            Firebase.setBool(fbdo, "/settings/autoTemperatureEnabled", autoTempEnabled);
+        }
+        
+        // 🔧 FIXED: Check temperature immediately with new settings
+        if (autoTempEnabled && lastTemperature > 0) {
+            Serial.printf("🌡️ Checking temperature immediately with new threshold: %.1f°C\n", lastTemperature);
+            processTemperatureLogic(lastTemperature);
+        }
+        
+        // If disabled, turn off fan
+        if (!autoTempEnabled && fanState) {
+            fanState = false;
+            coolingMode = false;
+            sendFanCommandSafe(false);
+        }
+    }
+    
+    float getThreshold() const { return temperatureThreshold; }
+    bool isEnabled() const { return autoTempEnabled; }
+    bool getFanState() const { return fanState; }
+    
+private:
+    void loadTemperatureSettings() {
+        if (!Firebase.ready()) return;
+        
+        if (Firebase.getFloat(fbdo, "/settings/temperatureThreshold")) {
+            float threshold = fbdo.floatData();
+            if (threshold >= TEMP_THRESHOLD_MIN && threshold <= TEMP_THRESHOLD_MAX) {
+                temperatureThreshold = threshold;
+            }
+        } else {
+            Firebase.setFloat(fbdo, "/settings/temperatureThreshold", DEFAULT_TEMP_THRESHOLD);
+        }
+        
+        if (Firebase.getBool(fbdo, "/settings/autoTemperatureEnabled")) {
+            autoTempEnabled = fbdo.boolData();
+        } else {
+            Firebase.setBool(fbdo, "/settings/autoTemperatureEnabled", true);
+        }
+    }
+    
+    // 🔧 NEW: Safe fan command with conflict resolution
+    void sendFanCommandSafe(bool state) {
+        if (!Firebase.ready()) return;
+        
+        // Check current fan1 state before sending command
+        bool fan1Current = false;
+        if (Firebase.getBool(fbdo, "/devices/fan1/state")) {
+            fan1Current = fbdo.boolData();
+        }
+        
+        // Only send command if state needs to change
+        if (state != fan1Current) {
+            Firebase.setBool(fbdo, "/auto_commands/fan1", state);
+            Serial.printf("🌡️ Auto temp command: fan1 = %s\n", state ? "ON" : "OFF");
+        } else {
+            Serial.printf("🌡️ Fan1 already %s - no command needed\n", state ? "ON" : "OFF");
+        }
+    }
+    
+    void updateFirebaseStatus(float currentTemp) {
+        if (!Firebase.ready()) return;
+        
+        Firebase.setBool(fbdo, "/status/autoTemperature/fanOn", fanState);
+        Firebase.setFloat(fbdo, "/status/autoTemperature/currentTemp", currentTemp);
+        Firebase.setFloat(fbdo, "/status/autoTemperature/threshold", temperatureThreshold);
+        Firebase.setBool(fbdo, "/status/autoTemperature/coolingMode", coolingMode);
+        Firebase.setTimestamp(fbdo, "/status/autoTemperature/lastUpdate");
+    }
+    
+    void logTemperatureControlEvent(float temp, bool fanOn) {
+        if (!Firebase.ready()) return;
+        
+        unsigned long timestamp = millis() / 1000;
+        String logId = String(timestamp) + "_temp_" + String(random(1000, 9999));
+        String logPath = "/history/" + logId;
+        
+        FirebaseJson json;
+        json.set("type", "auto_temperature_control");
+        json.set("timestamp", timestamp);
+        json.set("device", "ESP32_HOME_TEMP_SYSTEM");
+        json.set("temperature", temp);
+        json.set("threshold", temperatureThreshold);
+        json.set("fanState", fanOn);
+        json.set("coolingMode", coolingMode);
+        
+        Firebase.setJSON(fbdo, logPath, json);
+    }
+};
+
+// ========== ENHANCED SMART HOME CLASS ==========
 
 class SmartHome {
 private:
     PowerManager powerManager;
     TemperatureHumiditySensor tempHumidSensor;
-    GasSensor gasSensor;
+    EnhancedGasSensor enhancedGasSensor;
     LightSensor lightSensor;
+    AutoTemperatureController tempController;
     
     Fan fans[3] = {
         Fan(FAN1_PIN, "fan1"),
@@ -868,24 +1315,31 @@ private:
     unsigned long lastFirebaseCheck = 0;
     unsigned long lastAutoLightUpdate = 0;
     unsigned long lastHeartbeat = 0;
+    unsigned long lastAutoCommandCheck = 0;
     
 public:
     SmartHome() : 
         tempHumidSensor(DHT_PIN),
-        gasSensor(MQ2_PIN),
+        enhancedGasSensor(MQ2_PIN),
         lightSensor(LIGHT_SENSOR_PIN),
         autoLight(AUTO_LIGHT_PIN, "autoLight") {}
     
     void init() {
         Serial.begin(115200);
-        Serial.println("\n=== ECO SMART HOME SYSTEM v3.2 - ENHANCED BATTERY SOC SYSTEM ===");
+        Serial.println("\n=== ECO SMART HOME SYSTEM v4.1 - ENHANCED & OPTIMIZED ===");
         Serial.printf("🔋 Enhanced Battery: 4S Li-ion %.0fmAh (%.1fV-%.1fV)\n", 
                      BATTERY_CAPACITY_MAH, BATTERY_MIN_VOLTAGE, BATTERY_MAX_VOLTAGE);
+        Serial.printf("🌡️ Auto Temperature Control: Threshold %.1f°C ± %.1f°C hysteresis\n", 
+                     DEFAULT_TEMP_THRESHOLD, TEMP_HYSTERESIS);
+        Serial.printf("🔥 Enhanced Gas System: 3-level warning (%.0f/%.0f/%.0f PPM)\n", 
+                     DEFAULT_GAS_THRESHOLD_1, DEFAULT_GAS_THRESHOLD_2, DEFAULT_GAS_THRESHOLD_3);
+        Serial.println("💡 Auto Light Control: Responds to gate authentication");
         Serial.printf("🔧 Power thresholds: Min %.2fW, Display %.1fW, Max %.0fW\n", 
                      MIN_POWER_THRESHOLD_MW/1000.0, DISPLAY_POWER_THRESHOLD_MW/1000.0, MAX_POWER_DISPLAY_MW/1000.0);
         Serial.printf("🔧 Shunt resistor: %.3fΩ with custom calibrations\n", SHUNT_RESISTOR_VALUE);
         Serial.println("🔋 Dual SoC calculation: Voltage curve + Coulomb counting");
         Serial.println("🔧 Power MUX: 3-gate control for source switching");
+        Serial.println("🔧 ENHANCED: Dynamic Gas Calibration + Conflict Resolution");
         
         Wire.begin(SDA_PIN, SCL_PIN);
         Serial.println("I2C initialized");
@@ -893,8 +1347,9 @@ public:
         // Initialize hardware
         powerManager.init();
         tempHumidSensor.init();
-        gasSensor.init();
+        enhancedGasSensor.init();
         lightSensor.init();
+        tempController.init();
         
         for (int i = 0; i < 3; i++) {
             fans[i].init();
@@ -947,15 +1402,15 @@ public:
         
         if (Firebase.ready()) {
             Serial.println("\nFirebase connected!");
-            Firebase.setString(fbdo, "/system/version", "3.2");
-            Firebase.setString(fbdo, "/system/features", "Enhanced Battery SoC + Dual Method Calculation + Power MUX + 4S Li-ion");
-            Firebase.setString(fbdo, "/system/powerConfig", "0.01Ω Shunt + Enhanced SoC + Voltage Curve + Coulomb Counting");
+            Firebase.setString(fbdo, "/system/version", "4.1");
+            Firebase.setString(fbdo, "/system/features", "Enhanced Auto Controls + Dynamic Gas Calibration + Conflict Resolution");
+            Firebase.setString(fbdo, "/system/powerConfig", "0.01Ω Shunt + Enhanced SoC + Auto Controls");
             sendInitialStates();
         } else {
             Serial.println("\nFirebase connection failed!");
         }
         
-        Serial.println("=== SMART HOME SYSTEM READY - ENHANCED BATTERY SOC SYSTEM ===");
+        Serial.println("=== SMART HOME SYSTEM READY - ENHANCED & OPTIMIZED ===");
     }
     
     void run() {
@@ -967,6 +1422,12 @@ public:
             lastFirebaseCheck = currentTime;
         }
         
+        // 🔧 ENHANCED: Check auto commands every 200ms with conflict resolution
+        if (currentTime - lastAutoCommandCheck >= 200) {
+            checkAutoCommands();
+            lastAutoCommandCheck = currentTime;
+        }
+        
         // Read sensors every 3 seconds (for gas sensor stability)
         if (currentTime - lastSensorRead >= 3000) {
             readSensors();
@@ -976,7 +1437,6 @@ public:
         // Read power data every 2 seconds
         if (currentTime - lastPowerRead >= 2000) {
             readPowerData();
-            // 🔧 FIXED: Call updatePowerMux method from powerManager
             powerManager.updatePowerMux();
             lastPowerRead = currentTime;
         }
@@ -996,8 +1456,14 @@ public:
     
     void readSensors() {
         tempHumidSensor.read();
-        gasSensor.read();
+        enhancedGasSensor.read();
         lightSensor.read();
+        
+        // 🔧 ENHANCED: Auto temperature control with immediate response
+        float currentTemp = tempHumidSensor.getTemperature();
+        if (currentTemp > 0) {
+            tempController.checkTemperature(currentTemp);
+        }
     }
     
     void readPowerData() {
@@ -1009,15 +1475,82 @@ public:
         autoLight.updateState(lightSensor.isDark());
     }
     
+    // 🔧 ENHANCED: Auto commands with conflict resolution
+    void checkAutoCommands() {
+        if (!Firebase.ready()) return;
+        
+        // Check auto light commands (no conflicts expected)
+        checkAutoLightCommands();
+        
+        // Check auto fan commands with conflict resolution
+        checkAutoFanCommands();
+    }
+    
+    void checkAutoLightCommands() {
+        // Auto light commands from gate authentication
+        if (Firebase.getBool(fbdo, "/auto_commands/light1")) {
+            if (fbdo.dataType() == "boolean" && fbdo.boolData()) {
+                lights[0].setState(true);
+                Firebase.setBool(fbdo, "/auto_commands/light1", false);
+                Serial.println("💡 Auto: Turned ON light1 (Living Room)");
+            }
+        }
+        
+        if (Firebase.getBool(fbdo, "/auto_commands/light4")) {
+            if (fbdo.dataType() == "boolean" && fbdo.boolData()) {
+                lights[3].setState(true);
+                Firebase.setBool(fbdo, "/auto_commands/light4", false);
+                Serial.println("💡 Auto: Turned ON light4 (Garage)");
+            }
+        }
+    }
+    
+    void checkAutoFanCommands() {
+        // 🔧 NEW: Check auto fan commands with conflict resolution
+        for (int i = 0; i < 3; i++) {
+            String fanPath = "/auto_commands/fan" + String(i + 1);
+            
+            if (Firebase.getBool(fbdo, fanPath.c_str())) {
+                if (fbdo.dataType() == "boolean") {
+                    bool commandState = fbdo.boolData();
+                    bool currentState = fans[i].getState();
+                    
+                    // Only execute if state actually needs to change
+                    if (commandState != currentState) {
+                        fans[i].setState(commandState);
+                        Serial.printf("🔥 Auto: Changed fan%d to %s\n", 
+                                     i + 1, commandState ? "ON" : "OFF");
+                    }
+                    
+                    // Always clear the command after processing
+                    Firebase.setBool(fbdo, fanPath.c_str(), false);
+                }
+            }
+        }
+    }
+    
     void sendHeartbeat() {
         if (Firebase.ready()) {
             Firebase.setString(fbdo, "/system/status", "online");
             Firebase.setFloat(fbdo, "/system/uptime", millis() / 1000.0);
             Firebase.setFloat(fbdo, "/system/freeHeap", ESP.getFreeHeap() / 1024.0);
-            Firebase.setString(fbdo, "/system/powerSupport", "Enhanced Battery SoC + Dual Method + Power MUX");
+            Firebase.setString(fbdo, "/system/autoControls", "Enhanced Temperature + Gas 3-Level + Auto Lights");
+            
+            // 🔧 ENHANCED: Enhanced heartbeat with auto control status
+            Firebase.setBool(fbdo, "/system/autoTemperatureEnabled", tempController.isEnabled());
+            Firebase.setFloat(fbdo, "/system/temperatureThreshold", tempController.getThreshold());
+            Firebase.setInt(fbdo, "/system/gasLevel", enhancedGasSensor.getGasLevel());
+            Firebase.setFloat(fbdo, "/system/currentGasPPM", enhancedGasSensor.getGasPPM());
+            Firebase.setFloat(fbdo, "/system/batterySOC", powerManager.getBatteryState().soc_combined);
+            Firebase.setBool(fbdo, "/system/gasCalibrated", enhancedGasSensor.isCalibrated());
+            
             Firebase.setTimestamp(fbdo, "/system/lastHeartbeat");
-            Serial.printf("❤️ Heartbeat sent - Uptime: %.1fs, Free Heap: %.1fKB, SoC: %.1f%%\n", 
-                         millis() / 1000.0, ESP.getFreeHeap() / 1024.0, powerManager.getBatteryState().soc_combined);
+            Serial.printf("❤️ Enhanced Heartbeat - Temp: %.1f°C, Gas: %.0f ppm (L%d), SoC: %.1f%%, GasCal: %s\n", 
+                         tempHumidSensor.getTemperature(), 
+                         enhancedGasSensor.getGasPPM(),
+                         enhancedGasSensor.getGasLevel(),
+                         powerManager.getBatteryState().soc_combined,
+                         enhancedGasSensor.isCalibrated() ? "YES" : "NO");
         }
     }
     
@@ -1033,6 +1566,10 @@ public:
         }
         Firebase.setBool(fbdo, "/devices/autoLight/state", autoLight.getState());
         Firebase.setBool(fbdo, "/devices/autoLight/enabled", autoLight.isEnabled());
+        
+        // 🔧 ENHANCED: Send auto control initial states
+        Firebase.setBool(fbdo, "/settings/autoTemperatureEnabled", tempController.isEnabled());
+        Firebase.setFloat(fbdo, "/settings/temperatureThreshold", tempController.getThreshold());
         
         // System info
         Firebase.setString(fbdo, "/system/status", "online");
@@ -1077,10 +1614,85 @@ public:
                 Serial.println("✅ Commands processed instantly and cleared");
             }
         }
+        
+        // 🔧 ENHANCED: Check for settings updates with immediate response
+        checkSettingsUpdates();
     }
     
-    // 🔧 NEW: Expose powerManager for external access if needed
+    // 🔧 ENHANCED: Settings updates with immediate response
+    void checkSettingsUpdates() {
+        static float lastTempThreshold = 0;
+        static bool lastTempEnabled = true;
+        
+        // Check temperature threshold updates
+        if (Firebase.getFloat(fbdo, "/settings/temperatureThreshold")) {
+            float newThreshold = fbdo.floatData();
+            
+            bool tempEnabled = tempController.isEnabled();
+            if (Firebase.getBool(fbdo, "/settings/autoTemperatureEnabled")) {
+                tempEnabled = fbdo.boolData();
+            }
+            
+            // 🔧 FIXED: Update settings if changed and trigger immediate check
+            if (abs(newThreshold - lastTempThreshold) > 0.1 || tempEnabled != lastTempEnabled) {
+                tempController.updateSettings(newThreshold, tempEnabled);
+                
+                // 🔧 FIXED: Immediate temperature check with new settings
+                float currentTemp = tempHumidSensor.getTemperature();
+                if (currentTemp > 0) {
+                    tempController.checkTemperature(currentTemp);
+                }
+                
+                lastTempThreshold = newThreshold;
+                lastTempEnabled = tempEnabled;
+            }
+        }
+        
+        // Check gas threshold updates
+        checkGasThresholdUpdates();
+    }
+    
+    void checkGasThresholdUpdates() {
+        static float lastGasThresholds[3] = {0, 0, 0};
+        
+        bool thresholdsChanged = false;
+        float newThresholds[3];
+        
+        if (Firebase.getFloat(fbdo, "/settings/gasThresholds/warning")) {
+            newThresholds[0] = fbdo.floatData();
+            if (abs(newThresholds[0] - lastGasThresholds[0]) > 1) {
+                thresholdsChanged = true;
+            }
+        }
+        
+        if (Firebase.getFloat(fbdo, "/settings/gasThresholds/alert")) {
+            newThresholds[1] = fbdo.floatData();
+            if (abs(newThresholds[1] - lastGasThresholds[1]) > 1) {
+                thresholdsChanged = true;
+            }
+        }
+        
+        if (Firebase.getFloat(fbdo, "/settings/gasThresholds/danger")) {
+            newThresholds[2] = fbdo.floatData();
+            if (abs(newThresholds[2] - lastGasThresholds[2]) > 1) {
+                thresholdsChanged = true;
+            }
+        }
+        
+        if (thresholdsChanged) {
+            enhancedGasSensor.updateGasThresholds(newThresholds[0], newThresholds[1], newThresholds[2]);
+            
+            // Update tracking variables
+            lastGasThresholds[0] = newThresholds[0];
+            lastGasThresholds[1] = newThresholds[1];
+            lastGasThresholds[2] = newThresholds[2];
+        }
+    }
+    
+    // 🔧 NEW: Expose controllers for external access if needed
     PowerManager& getPowerManager() { return powerManager; }
+    AutoTemperatureController& getTemperatureController() { return tempController; }
+    EnhancedGasSensor& getGasSensor() { return enhancedGasSensor; }
 };
 
 // ========== GLOBAL INSTANCE ==========
@@ -1090,6 +1702,7 @@ SmartHome smartHome;
 
 void setup() {
     smartHome.init();
+    
     // ----- OTA Setup -----
     ArduinoOTA.setHostname("homesystems");
     ArduinoOTA.setPassword("ota_ecohome2025");
@@ -1107,12 +1720,17 @@ void setup() {
         else if (e==OTA_END_ERROR)    Serial.println("End Failed");
     });
     ArduinoOTA.begin();
-    Serial.println("OTA Ready");
+    
+    Serial.println("🔧 Smart Home v4.1 - Enhanced & Optimized!");
+    Serial.println("✅ Enhanced: MQ2 Dynamic Calibration");
+    Serial.println("✅ Enhanced: Immediate Temperature Response");
+    Serial.println("✅ Enhanced: Manual vs Auto Control Conflict Resolution");
+    Serial.println("✅ Enhanced: State Management & Firebase Integration");
+    Serial.println("OTA Ready - System fully operational!");
 }
 
 void loop() {
     ArduinoOTA.handle();
     smartHome.run();
-    // ⚡ CRITICAL: Minimal delay for instant response
-    delay(50);
+    delay(50); // Minimal delay for instant response
 }
