@@ -6,6 +6,8 @@
 #include "img_converters.h"
 #include "Arduino.h"
 #include <ArduinoOTA.h>
+#include <ArduinoJson.h>
+#include <FirebaseESP32.h>
 
 // ===================== CONFIG CLASS =====================
 class Config {
@@ -16,6 +18,10 @@ public:
     
     // Server endpoints
     static const char* AI_SERVER_URL;
+    
+    // Firebase credentials
+    static const char* FIREBASE_HOST;
+    static const char* FIREBASE_AUTH;
     
     // Camera pins for AI Thinker Model
     static const int PWDN_GPIO_NUM = 32;
@@ -35,12 +41,87 @@ public:
     static const int HREF_GPIO_NUM = 23;
     static const int PCLK_GPIO_NUM = 22;
     static const int FLASH_LED_PIN = 4;
+    
+    // 2FA Constants
+    static const int MAX_FACE_ATTEMPTS = 10;
+    static const int FACE_CAPTURE_INTERVAL = 2000; // 2 seconds
+    static const int FACE_TIMEOUT = 30000; // 30 seconds
+    static const float FACE_CONFIDENCE_THRESHOLD; // 0.60
 };
 
 // Define static members
-const char* Config::WIFI_SSID = "THIEN NHAN";
-const char* Config::WIFI_PASSWORD = "13022021";
+const char* Config::WIFI_SSID = "    ";
+const char* Config::WIFI_PASSWORD = "     ";
 const char* Config::AI_SERVER_URL = "https://pyfaceid.myfreeiot.win";
+const char* Config::FIREBASE_HOST = "smart-home-b7a03-default-rtdb.asia-southeast1.firebasedatabase.app";
+const char* Config::FIREBASE_AUTH = "AIzaSyAO-6fXi3A_gLZz_uf9JKpQUOuxLfu6r1I";
+const float Config::FACE_CONFIDENCE_THRESHOLD = 0.60;
+
+// ===================== FIREBASE MANAGER CLASS =====================
+class FirebaseManager {
+private:
+    FirebaseData firebaseData;
+    FirebaseConfig firebaseConfig;
+    FirebaseAuth firebaseAuth;
+    
+public:
+    bool initialize() {
+        firebaseConfig.host = Config::FIREBASE_HOST;
+        firebaseConfig.signer.tokens.legacy_token = Config::FIREBASE_AUTH;
+        
+        Firebase.begin(&firebaseConfig, &firebaseAuth);
+        Firebase.reconnectWiFi(true);
+        
+        if (Firebase.setString(firebaseData, "/esp32cam/status", "online")) {
+            Serial.println("Firebase connected successfully!");
+            return true;
+        } else {
+            Serial.printf("Firebase connection failed: %s\n", firebaseData.errorReason().c_str());
+            return false;
+        }
+    }
+    
+    bool checkFaceRequest(String& expectedUser, String& sessionId) {
+        if (Firebase.getString(firebaseData, "/face_request/user")) {
+            if (firebaseData.dataType() == "string" && firebaseData.stringData().length() > 0) {
+                expectedUser = firebaseData.stringData();
+                
+                if (Firebase.getString(firebaseData, "/face_request/session_id")) {
+                    sessionId = firebaseData.stringData();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    void clearFaceRequest() {
+        Firebase.setString(firebaseData, "/face_request/user", "");
+        Firebase.setString(firebaseData, "/face_request/session_id", "");
+    }
+    
+    void updateFaceProgress(String sessionId, int attempts, float confidence, String status) {
+        String path = "/face_progress/" + sessionId;
+        FirebaseJson json;
+        json.set("attempts", attempts);
+        json.set("confidence", confidence);
+        json.set("status", status);
+        json.set("timestamp", millis() / 1000);
+        
+        Firebase.setJSON(firebaseData, path, json);
+    }
+    
+    void reportFaceResult(String sessionId, bool success, float confidence, int totalAttempts) {
+        String path = "/face_result/" + sessionId;
+        FirebaseJson json;
+        json.set("success", success);
+        json.set("confidence", confidence);
+        json.set("total_attempts", totalAttempts);
+        json.set("timestamp", millis() / 1000);
+        
+        Firebase.setJSON(firebaseData, path, json);
+    }
+};
 
 // ===================== WIFI MANAGER CLASS =====================
 class WiFiManager {
@@ -216,6 +297,15 @@ public:
             delay(offTime);
         }
     }
+    
+    void pulseForFaceRecognition() {
+        for(int i = 0; i < 3; i++) {
+            flashOn();
+            delay(100);
+            flashOff();
+            delay(100);
+        }
+    }
 };
 
 // ===================== AI SERVER CLIENT CLASS =====================
@@ -232,6 +322,7 @@ public:
         HTTPClient http;
         String endpoint = serverUrl + "/" + action;
         http.begin(endpoint);
+        http.setTimeout(15000); // Increased timeout for face recognition
         http.addHeader("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW");
         
         String body = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n";
@@ -256,6 +347,201 @@ public:
         
         return response;
     }
+    
+    bool recognizeFace(camera_fb_t* fb, const String& expectedUser, float& confidence) {
+        String response = sendImage(fb, expectedUser, "recognize");
+        
+        DynamicJsonDocument doc(1024);
+        DeserializationError error = deserializeJson(doc, response);
+        
+        if (error) {
+            Serial.printf("Failed to parse recognition response: %s\n", error.c_str());
+            return false;
+        }
+        
+        bool success = doc["success"] | false;
+        String recognizedName = doc["name"] | "";
+        confidence = doc["confidence"] | 0.0;
+        
+        Serial.printf("Recognition result: %s, Name: %s, Confidence: %.2f\n", 
+                      success ? "SUCCESS" : "FAILED", recognizedName.c_str(), confidence);
+        
+        if (!success) {
+            return false;
+        }
+        
+        // Check confidence threshold
+        if (confidence < Config::FACE_CONFIDENCE_THRESHOLD) {
+            Serial.printf("Confidence too low: %.2f < %.2f\n", confidence, Config::FACE_CONFIDENCE_THRESHOLD);
+            return false;
+        }
+        
+        // Check user match (case insensitive)
+        String expectedLower = expectedUser;
+        expectedLower.toLowerCase();
+        recognizedName.toLowerCase();
+        
+        if (recognizedName == expectedLower || recognizedName.indexOf(expectedLower) >= 0) {
+            Serial.println("Face recognition successful - user match!");
+            return true;
+        } else {
+            Serial.printf("User mismatch: expected %s, got %s\n", 
+                          expectedUser.c_str(), recognizedName.c_str());
+            return false;
+        }
+    }
+};
+
+// ===================== 2FA FACE RECOGNITION MANAGER CLASS =====================
+class FaceRecognitionManager {
+private:
+    CameraManager* cameraManager;
+    LEDController* ledController;
+    AIServerClient* aiClient;
+    FirebaseManager* firebaseManager;
+    
+    bool isActive;
+    String currentUser;
+    String currentSessionId;
+    int attempts;
+    unsigned long startTime;
+    unsigned long lastAttemptTime;
+    float lastConfidence;
+    
+public:
+    FaceRecognitionManager(CameraManager* cam, LEDController* led, AIServerClient* ai, FirebaseManager* fb)
+        : cameraManager(cam), ledController(led), aiClient(ai), firebaseManager(fb) {
+        reset();
+    }
+    
+    void reset() {
+        isActive = false;
+        currentUser = "";
+        currentSessionId = "";
+        attempts = 0;
+        startTime = 0;
+        lastAttemptTime = 0;
+        lastConfidence = 0.0;
+    }
+    
+    void startRecognition(const String& expectedUser, const String& sessionId) {
+        Serial.printf("🔍 Starting 2FA Face Recognition for user: %s (Session: %s)\n", 
+                      expectedUser.c_str(), sessionId.c_str());
+        
+        isActive = true;
+        currentUser = expectedUser;
+        currentSessionId = sessionId;
+        attempts = 0;
+        startTime = millis();
+        lastAttemptTime = 0;
+        lastConfidence = 0.0;
+        
+        // Signal start with LED
+        ledController->pulseForFaceRecognition();
+        
+        // Update Firebase with start status
+        firebaseManager->updateFaceProgress(sessionId, 0, 0.0, "started");
+    }
+    
+    void stopRecognition() {
+        if (isActive) {
+            Serial.println("🔍 Stopping face recognition");
+            firebaseManager->updateFaceProgress(currentSessionId, attempts, lastConfidence, "stopped");
+            reset();
+        }
+    }
+    
+    void loop() {
+        if (!isActive) return;
+        
+        // Check timeout
+        if (millis() - startTime > Config::FACE_TIMEOUT) {
+            Serial.println("🔍 Face recognition timeout!");
+            firebaseManager->reportFaceResult(currentSessionId, false, lastConfidence, attempts);
+            firebaseManager->updateFaceProgress(currentSessionId, attempts, lastConfidence, "timeout");
+            ledController->blink(3, 500, 200); // Error blink
+            reset();
+            return;
+        }
+        
+        // Check max attempts
+        if (attempts >= Config::MAX_FACE_ATTEMPTS) {
+            Serial.println("🔍 Max face attempts reached!");
+            firebaseManager->reportFaceResult(currentSessionId, false, lastConfidence, attempts);
+            firebaseManager->updateFaceProgress(currentSessionId, attempts, lastConfidence, "max_attempts");
+            ledController->blink(3, 500, 200); // Error blink
+            reset();
+            return;
+        }
+        
+        // Perform face recognition attempt
+        if (millis() - lastAttemptTime > Config::FACE_CAPTURE_INTERVAL) {
+            performFaceRecognition();
+        }
+    }
+    
+    bool getStatus() {
+        return isActive;
+    }
+    
+    String getStatusInfo() {
+        if (!isActive) return "Inactive";
+        
+        unsigned long elapsed = millis() - startTime;
+        unsigned long remaining = Config::FACE_TIMEOUT - elapsed;
+        
+        return String("User: ") + currentUser + 
+               ", Attempts: " + String(attempts) + "/" + String(Config::MAX_FACE_ATTEMPTS) +
+               ", Remaining: " + String(remaining / 1000) + "s" +
+               ", Last Confidence: " + String(lastConfidence * 100, 1) + "%";
+    }
+
+private:
+    void performFaceRecognition() {
+        attempts++;
+        lastAttemptTime = millis();
+        
+        Serial.printf("🔍 Face attempt %d/%d for user: %s\n", attempts, Config::MAX_FACE_ATTEMPTS, currentUser.c_str());
+        
+        // Flash LED during capture
+        ledController->flashOn();
+        
+        // Capture frame
+        camera_fb_t* fb = cameraManager->captureFrame();
+        if (!fb) {
+            Serial.println("🔍 Failed to capture frame");
+            ledController->flashOff();
+            firebaseManager->updateFaceProgress(currentSessionId, attempts, 0.0, "capture_failed");
+            return;
+        }
+        
+        // Recognize face
+        float confidence = 0.0;
+        bool success = aiClient->recognizeFace(fb, currentUser, confidence);
+        lastConfidence = confidence;
+        
+        // Return frame
+        cameraManager->returnFrame(fb);
+        ledController->flashOff();
+        
+        // Update progress
+        String status = success ? "success" : "failed";
+        firebaseManager->updateFaceProgress(currentSessionId, attempts, confidence, status);
+        
+        Serial.printf("🔍 Recognition result: %s, Confidence: %.1f%% (need >= %.0f%%)\n", 
+                      success ? "SUCCESS" : "FAILED", confidence * 100, Config::FACE_CONFIDENCE_THRESHOLD * 100);
+        
+        if (success) {
+            Serial.println("🔍 Face recognition SUCCESSFUL! Reporting to Firebase...");
+            firebaseManager->reportFaceResult(currentSessionId, true, confidence, attempts);
+            ledController->blink(2, 200, 100); // Success blink
+            reset();
+        } else {
+            Serial.printf("🔍 Face recognition failed (%.1f%% < %.0f%%). Continuing...\n", 
+                          confidence * 100, Config::FACE_CONFIDENCE_THRESHOLD * 100);
+            // Continue with next attempt
+        }
+    }
 };
 
 // ===================== WEB SERVER MANAGER CLASS =====================
@@ -266,6 +552,7 @@ private:
     LEDController* ledController;
     AIServerClient* aiClient;
     WiFiManager* wifiManager;
+    FaceRecognitionManager* faceManager;
     
     static esp_err_t setCORSHeaders(httpd_req_t *req) {
         httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -281,8 +568,8 @@ private:
     }
     
 public:
-    WebServerManager(CameraManager* cam, LEDController* led, AIServerClient* ai, WiFiManager* wifi) 
-        : server(nullptr), cameraManager(cam), ledController(led), aiClient(ai), wifiManager(wifi) {}
+    WebServerManager(CameraManager* cam, LEDController* led, AIServerClient* ai, WiFiManager* wifi, FaceRecognitionManager* face) 
+        : server(nullptr), cameraManager(cam), ledController(led), aiClient(ai), wifiManager(wifi), faceManager(face) {}
     
     bool start(int port = 80) {
         httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -336,6 +623,14 @@ private:
             .user_ctx = this
         };
         
+        // 2FA Face Recognition status endpoint
+        httpd_uri_t face_status_uri = {
+            .uri = "/face_status",
+            .method = HTTP_GET,
+            .handler = faceStatusHandler,
+            .user_ctx = this
+        };
+        
         // OPTIONS endpoint for CORS
         httpd_uri_t options_uri = {
             .uri = "/*",
@@ -348,6 +643,7 @@ private:
         httpd_register_uri_handler(server, &capture_uri);
         httpd_register_uri_handler(server, &send_to_ai_uri);
         httpd_register_uri_handler(server, &status_uri);
+        httpd_register_uri_handler(server, &face_status_uri);
         httpd_register_uri_handler(server, &options_uri);
     }
     
@@ -369,6 +665,11 @@ private:
     static esp_err_t statusHandler(httpd_req_t *req) {
         WebServerManager* self = (WebServerManager*)req->user_ctx;
         return self->handleStatus(req);
+    }
+    
+    static esp_err_t faceStatusHandler(httpd_req_t *req) {
+        WebServerManager* self = (WebServerManager*)req->user_ctx;
+        return self->handleFaceStatus(req);
     }
     
     static esp_err_t optionsHandler(httpd_req_t *req) {
@@ -495,11 +796,23 @@ private:
         
         static char json_response[1024];
         snprintf(json_response, sizeof(json_response),
-            "{\"status\":\"online\",\"heap\":%d,\"rssi\":%d,\"localip\":\"%s\"}",
-            ESP.getFreeHeap(), wifiManager->getRSSI(), wifiManager->getLocalIP().c_str());
+            "{\"status\":\"online\",\"heap\":%d,\"rssi\":%d,\"localip\":\"%s\",\"face_recognition_active\":%s}",
+            ESP.getFreeHeap(), wifiManager->getRSSI(), wifiManager->getLocalIP().c_str(),
+            faceManager->getStatus() ? "true" : "false");
         
         httpd_resp_set_type(req, "application/json");
         return httpd_resp_sendstr(req, json_response);
+    }
+    
+    esp_err_t handleFaceStatus(httpd_req_t *req) {
+        setCORSHeaders(req);
+        
+        String statusInfo = faceManager->getStatusInfo();
+        String json_response = "{\"active\":" + String(faceManager->getStatus() ? "true" : "false") + 
+                              ",\"info\":\"" + statusInfo + "\"}";
+        
+        httpd_resp_set_type(req, "application/json");
+        return httpd_resp_sendstr(req, json_response.c_str());
     }
 };
 
@@ -548,8 +861,13 @@ private:
     CameraManager* cameraManager;
     LEDController* ledController;
     AIServerClient* aiClient;
+    FirebaseManager* firebaseManager;
+    FaceRecognitionManager* faceRecognitionManager;
     WebServerManager* webServerManager;
     OTAManager* otaManager;
+    
+    unsigned long lastFirebaseCheck;
+    const unsigned long FIREBASE_CHECK_INTERVAL = 1000; // Check every 1 second
     
 public:
     ESP32CameraSystem() {
@@ -557,8 +875,12 @@ public:
         cameraManager = new CameraManager();
         ledController = new LEDController(Config::FLASH_LED_PIN);
         aiClient = new AIServerClient(Config::AI_SERVER_URL);
-        webServerManager = new WebServerManager(cameraManager, ledController, aiClient, wifiManager);
+        firebaseManager = new FirebaseManager();
+        faceRecognitionManager = new FaceRecognitionManager(cameraManager, ledController, aiClient, firebaseManager);
+        webServerManager = new WebServerManager(cameraManager, ledController, aiClient, wifiManager, faceRecognitionManager);
         otaManager = new OTAManager();
+        
+        lastFirebaseCheck = 0;
     }
     
     ~ESP32CameraSystem() {
@@ -566,6 +888,8 @@ public:
         delete cameraManager;
         delete ledController;
         delete aiClient;
+        delete firebaseManager;
+        delete faceRecognitionManager;
         delete webServerManager;
         delete otaManager;
     }
@@ -573,6 +897,13 @@ public:
     bool initialize() {
         Serial.begin(115200);
         Serial.setDebugOutput(false);
+        
+        Serial.println("=== ESP32-CAM 2FA FACE RECOGNITION SYSTEM ===");
+        Serial.println("Features: Continuous Face Capture for 2FA Authentication");
+        Serial.println("Max attempts: " + String(Config::MAX_FACE_ATTEMPTS));
+        Serial.println("Confidence threshold: " + String(Config::FACE_CONFIDENCE_THRESHOLD * 100) + "%");
+        Serial.println("Capture interval: " + String(Config::FACE_CAPTURE_INTERVAL) + "ms");
+        Serial.println("Timeout: " + String(Config::FACE_TIMEOUT) + "ms");
         
         // Initialize camera
         if (!cameraManager->initialize()) {
@@ -586,8 +917,14 @@ public:
             return false;
         }
         
+        // Initialize Firebase
+        if (!firebaseManager->initialize()) {
+            Serial.println("Firebase initialization failed!");
+            // Continue without Firebase (optional)
+        }
+        
         // Initialize OTA
-        otaManager->initialize("esp32cam_facedetect", "ota_ecohome2025");
+        otaManager->initialize("esp32cam_2fa", "ota_ecohome2025");
         
         // Start web server
         if (!webServerManager->start()) {
@@ -606,8 +943,41 @@ public:
     }
     
     void loop() {
+        // Handle OTA updates
         otaManager->handle();
-        delay(100);
+        
+        // Check Firebase for face recognition requests
+        if (millis() - lastFirebaseCheck > FIREBASE_CHECK_INTERVAL) {
+            checkForFaceRequests();
+            lastFirebaseCheck = millis();
+        }
+        
+        // Handle face recognition process
+        faceRecognitionManager->loop();
+        
+        // Small delay to prevent watchdog reset
+        delay(10);
+    }
+
+private:
+    void checkForFaceRequests() {
+        if (!wifiManager->isConnected()) return;
+        
+        String expectedUser = "";
+        String sessionId = "";
+        
+        if (firebaseManager->checkFaceRequest(expectedUser, sessionId)) {
+            if (!faceRecognitionManager->getStatus()) {
+                Serial.printf("📨 New face recognition request: User=%s, Session=%s\n", 
+                              expectedUser.c_str(), sessionId.c_str());
+                
+                // Clear the request to prevent multiple triggers
+                firebaseManager->clearFaceRequest();
+                
+                // Start face recognition
+                faceRecognitionManager->startRecognition(expectedUser, sessionId);
+            }
+        }
     }
 };
 
