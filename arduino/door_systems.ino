@@ -1,7 +1,7 @@
 /*
- * ESP32 MAIN - Smart Gate Controller with Face Recognition (2-Factor Auth)
- * Quản lý RFID + Face Recognition, động cơ, cảm biến PIR, RTC, LCD và Firebase
- * Added Face Recognition Integration + Motor Speed Control
+ * ESP32 SMART GATE CONTROLLER - ENHANCED v4.0
+ * Features: RFID + Face Recognition (2FA) + Auto Light Control + Motor Speed Control
+ * NEW: Automatic Light Control after successful authentication
  */
 
 #include <WiFi.h>
@@ -18,8 +18,8 @@
 // =============================================================================
 // THÔNG TIN WIFI VÀ FIREBASE
 // =============================================================================
-#define WIFI_SSID "THIEN NHAN"
-#define WIFI_PASSWORD "13022021"
+#define WIFI_SSID "    "
+#define WIFI_PASSWORD "    "
 #define FIREBASE_HOST "smart-home-b7a03-default-rtdb.asia-southeast1.firebasedatabase.app"
 #define FIREBASE_AUTH "AIzaSyAO-6fXi3A_gLZz_uf9JKpQUOuxLfu6r1I"
 
@@ -135,6 +135,11 @@ unsigned long faceStartTime = 0;
 int faceAttempts = 0;
 float lastFaceConfidence = 0.0;
 bool faceRecognitionEnabled = true;
+
+// 🆕 NEW: Auto Light Control Variables
+bool autoLightControlEnabled = true;
+unsigned long lastLightCommandTime = 0;
+const unsigned long LIGHT_COMMAND_COOLDOWN = 2000; // 2 giây cooldown
 
 // Timing constants
 const unsigned long FIREBASE_CHECK_INTERVAL = 1000; // 1 giây
@@ -264,6 +269,17 @@ public:
         }
         noTone(BUZZER_PIN);
     }
+    
+    // 🆕 NEW: Special beep for auto light activation
+    void beepAutoLight() {
+        // Triple ascending beep for auto light activation
+        int notes[] = {800, 1000, 1200, 1000};
+        for (int i = 0; i < 4; i++) {
+            tone(BUZZER_PIN, notes[i], 100);
+            delay(120);
+        }
+        noTone(BUZZER_PIN);
+    }
 };
 
 // =============================================================================
@@ -289,11 +305,11 @@ public:
     
     void displayBootScreen() {
         lcd.setCursor(0, 0);
-        lcd.print("  SMART GATE v3.0   ");
+        lcd.print("  SMART GATE v4.0   ");
         lcd.setCursor(0, 1);
         lcd.print("====================");
         lcd.setCursor(0, 2);
-        lcd.print("2-Factor Auth Ready ");
+        lcd.print("2FA + Auto Lights   ");
         lcd.setCursor(0, 3);
         lcd.printf("Motor Speed: %d/255  ", currentMotorSpeed);
     }
@@ -310,13 +326,17 @@ public:
         else gateDisplay = "UNKNOWN ";
         lcd.print(gateDisplay);
         
-        // Hiển thị auth status và face status
+        // Hiển thị auth status và auto light status
         lcd.setCursor(13, 0);
         switch (currentAuthState) {
-            case AUTH_IDLE: lcd.print("[READY]"); break;
+            case AUTH_IDLE: 
+                lcd.print(autoLightControlEnabled ? "[A-ON]" : "[A-OF]"); 
+                break;
             case AUTH_RFID_SUCCESS: lcd.print("[RFID+]"); break;
             case AUTH_FACE_PENDING: lcd.print("[FACE?]"); break;
-            case AUTH_COMPLETED: lcd.print("[ OK! ]"); break;
+            case AUTH_COMPLETED: 
+                lcd.print(autoLightControlEnabled ? "[LITE!]" : "[ OK! ]"); 
+                break;
             case AUTH_FAILED: lcd.print("[ERROR]"); break;
             default: lcd.print("[?????]"); break;
         }
@@ -328,11 +348,12 @@ public:
                   now.day(), now.month(), 
                   now.hour(), now.minute(), now.second());
         
-        // Hiển thị system status
+        // Hiển thị system status với auto light indicator
         lcd.setCursor(14, 1);
         lcd.print(WiFi.status() == WL_CONNECTED ? "W" : "-");
         lcd.print(pirMotionDetected ? "M" : "-");
-        lcd.print(faceRecognitionEnabled ? "F" : "X"); // X = Face không có
+        lcd.print(faceRecognitionEnabled ? "F" : "X");
+        lcd.print(autoLightControlEnabled ? "L" : "-"); // L = Auto Light enabled
         
         // Dòng 3: Thông tin người dùng hoặc pending user
         lcd.setCursor(0, 2);
@@ -376,9 +397,9 @@ public:
         } else if (failCount >= 5) {
             lcd.print("SECURITY ALERT!!!   ");
         } else if (failCount > 0) {
-            lcd.printf("Fails: %d Speed:%d   ", failCount, currentMotorSpeed);
+            lcd.printf("Fails: %d AutoL:%s   ", failCount, autoLightControlEnabled ? "ON" : "OF");
         } else {
-            lcd.printf("2FA Ready Speed:%d  ", currentMotorSpeed);
+            lcd.printf("2FA+AutoL Ready:%d  ", currentMotorSpeed);
         }
     }
     
@@ -460,6 +481,22 @@ public:
         for (int i = 0; i < bars && i < 6; i++) {
             lcd.print("#");
         }
+    }
+    
+    // 🆕 NEW: Display auto light activation
+    void displayAutoLightActivation() {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("=== AUTO LIGHTS ===");
+        
+        lcd.setCursor(0, 1);
+        lcd.print("Activating lights...");
+        
+        lcd.setCursor(0, 2);
+        lcd.print("Living Room + Garage");
+        
+        lcd.setCursor(0, 3);
+        lcd.print("Welcome home!");
     }
     
     void displayFaceInstructions() {
@@ -682,7 +719,89 @@ private:
 };
 
 // =============================================================================
-// CLASS ENHANCED SMART GATE - HỆ THỐNG CHÍNH VỚI 2FA VÀ MOTOR CONTROL
+// 🆕 NEW: AUTO LIGHT CONTROLLER CLASS
+// =============================================================================
+class AutoLightController {
+private:
+    unsigned long lastCommandTime = 0;
+    
+public:
+    void begin() {
+        Serial.println("🔆 Auto Light Controller initialized");
+    }
+    
+    bool sendLightCommand(String lightId, bool state) {
+        if (millis() - lastCommandTime < LIGHT_COMMAND_COOLDOWN) {
+            Serial.println("🔆 Light command cooldown active, skipping...");
+            return false;
+        }
+        
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("🔆 WiFi not connected, cannot send light command");
+            return false;
+        }
+        
+        String path = "/auto_commands/" + lightId;
+        
+        if (Firebase.setBool(firebaseData, path.c_str(), state)) {
+            Serial.printf("🔆 Auto light command sent: %s = %s\n", lightId.c_str(), state ? "ON" : "OFF");
+            lastCommandTime = millis();
+            return true;
+        } else {
+            Serial.printf("🔆 Failed to send light command: %s\n", firebaseData.errorReason().c_str());
+            return false;
+        }
+    }
+    
+    void activateWelcomeLights() {
+        if (!autoLightControlEnabled) {
+            Serial.println("🔆 Auto light control disabled, skipping welcome lights");
+            return;
+        }
+        
+        Serial.println("🔆 Activating welcome lights (Living Room + Garage)...");
+        
+        // Send commands to turn on light1 (Living Room) and light4 (Garage)
+        bool light1Success = sendLightCommand("light1", true);
+        delay(100); // Small delay between commands
+        bool light4Success = sendLightCommand("light4", true);
+        
+        if (light1Success || light4Success) {
+            // Log the auto light activation
+            logAutoLightEvent();
+        }
+        
+        Serial.printf("🔆 Welcome lights result - Living Room: %s, Garage: %s\n", 
+                     light1Success ? "Success" : "Failed",
+                     light4Success ? "Success" : "Failed");
+    }
+    
+private:
+    void logAutoLightEvent() {
+        if (WiFi.status() != WL_CONNECTED) return;
+        
+        DateTime now = rtc.now();
+        long timestamp = now.unixtime();
+        
+        String logId = String(timestamp) + "_autolight_" + String(random(1000, 9999));
+        String logPath = "/history/" + logId;
+        
+        FirebaseJson json;
+        json.set("type", "auto_light_activation");
+        json.set("timestamp", timestamp);
+        json.set("device", "ESP32_GATE_2FA");
+        json.set("trigger", "successful_authentication");
+        json.set("lights_activated", "light1,light4");
+        json.set("user", lastUserName);
+        json.set("uid", lastUID);
+        
+        Firebase.setJSON(firebaseData, logPath, json);
+        Serial.println("🔆 Auto light event logged to history");
+    }
+};
+
+// =============================================================================
+// CLASS ENHANCED SMART GATE - HỆ THỐNG CHÍNH VỚI 2FA VÀ AUTO LIGHT CONTROL
 // =============================================================================
 class EnhancedSmartGate {
 private:
@@ -690,6 +809,7 @@ private:
     SoundManager soundManager;
     FaceRecognitionManager faceManager;
     MotorController motorController;
+    AutoLightController autoLightController; // 🆕 NEW
     unsigned long lastCardScanTime = 0;
     unsigned long lastFaceAttemptTime = 0;
     const unsigned long CARD_SCAN_COOLDOWN = 2000;
@@ -697,13 +817,15 @@ private:
 public:
     void begin() {
         Serial.begin(115200);
-        Serial.println("=== ENHANCED SMART GATE SYSTEM STARTING v3.0 ===");
+        Serial.println("=== ENHANCED SMART GATE SYSTEM STARTING v4.0 ===");
         Serial.println("=== 2-Factor Authentication: RFID + Face Recognition ===");
+        Serial.println("=== Auto Light Control: Living Room + Garage ===");
         Serial.println("=== Motor Speed Control: PWM Enabled ===");
         
         initializePins();
         motorController.begin();
         soundManager.begin();
+        autoLightController.begin(); // 🆕 NEW
         soundManager.beepInfo();
         
         Wire.begin(SDA_PIN, SCL_PIN);
@@ -735,7 +857,7 @@ public:
         blinkStatusLED(3);
         soundManager.beepSuccess();
         
-        Serial.println("=== HỆ THỐNG 2FA VỚI MOTOR CONTROL ĐÃ SẴN SÀNG ===");
+        Serial.println("=== HỆ THỐNG 2FA VỚI AUTO LIGHT CONTROL ĐÃ SẴN SÀNG ===");
     }
     
     void loop() {
@@ -1035,10 +1157,19 @@ private:
         Serial.println("=== 2-Factor Authentication COMPLETED SUCCESSFULLY ===");
         Serial.printf("✓ RFID: %s (User: %s)\n", pendingUID.c_str(), pendingUserName.c_str());
         Serial.printf("✓ FACE: %.1f%% confidence (>= 60%%)\n", lastFaceConfidence * 100);
-        Serial.println("✓ Both factors verified - Opening gate...");
+        Serial.println("✓ Both factors verified - Opening gate + Auto lights...");
         
         currentAuthState = AUTH_COMPLETED;
         lastUserName = pendingUserName;
+        
+        // 🆕 NEW: Show auto light activation on LCD
+        lcdManager.displayAutoLightActivation();
+        soundManager.beepAutoLight(); // Special beep for auto lights
+        
+        // 🆕 NEW: Activate welcome lights BEFORE opening gate
+        autoLightController.activateWelcomeLights();
+        
+        delay(1000); // Show the auto light message for 1 second
         
         lcdManager.displayAuthProgress("Complete", "Both verified! Opening...");
         soundManager.beepSuccess();
@@ -1176,7 +1307,7 @@ private:
         
         Serial.println("Firebase đã được khởi tạo");
         
-        if (Firebase.setString(firebaseData, "/test/connection", "ESP32_MAIN_2FA_MOTOR_V3.0")) {
+        if (Firebase.setString(firebaseData, "/test/connection", "ESP32_GATE_2FA_AUTO_LIGHTS_V4.0")) {
             Serial.println("Firebase kết nối thành công!");
             
             lcd.clear();
@@ -1234,6 +1365,18 @@ private:
                 }
             }
             
+            // 🆕 NEW: Sync auto light control setting
+            if (Firebase.getBool(firebaseData, "/config/autoLightControlEnabled")) {
+                if (firebaseData.dataType() == "boolean") {
+                    autoLightControlEnabled = firebaseData.boolData();
+                    Serial.printf("Auto Light Control enabled: %s\n", autoLightControlEnabled ? "true" : "false");
+                }
+            } else {
+                // Set default value if not exists
+                Firebase.setBool(firebaseData, "/config/autoLightControlEnabled", true);
+                autoLightControlEnabled = true;
+            }
+            
             if (Firebase.getInt(firebaseData, "/config/motorSpeed")) {
                 if (firebaseData.dataType() == "int") {
                     int newSpeed = firebaseData.intData();
@@ -1245,9 +1388,10 @@ private:
             }
         }
         
-        Serial.printf("Trạng thái ban đầu - Cửa: %s, 2FA: %s, Motor Speed: %d\n", 
+        Serial.printf("Trạng thái ban đầu - Cửa: %s, 2FA: %s, AutoLight: %s, Motor Speed: %d\n", 
                       gateCurrentStatus.c_str(), 
                       faceRecognitionEnabled ? "enabled" : "disabled",
+                      autoLightControlEnabled ? "enabled" : "disabled",
                       motorController.getCurrentSpeed());
     }
     
@@ -1287,6 +1431,18 @@ private:
                     faceRecognitionEnabled = newSetting;
                     Serial.printf("Face Recognition setting changed: %s\n", 
                                   faceRecognitionEnabled ? "enabled" : "disabled");
+                }
+            }
+        }
+        
+        // 🆕 NEW: Check auto light control setting
+        if (Firebase.getBool(firebaseData, "/config/autoLightControlEnabled")) {
+            if (firebaseData.dataType() == "boolean") {
+                bool newSetting = firebaseData.boolData();
+                if (newSetting != autoLightControlEnabled) {
+                    autoLightControlEnabled = newSetting;
+                    Serial.printf("Auto Light Control setting changed: %s\n", 
+                                  autoLightControlEnabled ? "enabled" : "disabled");
                 }
             }
         }
@@ -1505,8 +1661,9 @@ private:
         systemStatus.set("faceEnabled", faceRecognitionEnabled);
         systemStatus.set("faceAttempts", faceAttempts);
         systemStatus.set("faceConfidence", lastFaceConfidence);
+        systemStatus.set("autoLightEnabled", autoLightControlEnabled); // 🆕 NEW
         
-        Firebase.setJSON(firebaseData, "/system/main", systemStatus);
+        Firebase.setJSON(firebaseData, "/system/gate", systemStatus);
     }
     
     String getAuthStateString() {
@@ -1531,15 +1688,16 @@ private:
         DateTime now = rtc.now();
         long timestamp = now.unixtime();
         
-        String logId = String(timestamp) + "_main_" + String(random(1000, 9999));
+        String logId = String(timestamp) + "_gate_" + String(random(1000, 9999));
         String logPath = "/history/" + logId;
         
         FirebaseJson json;
         json.set("type", type);
         json.set("timestamp", timestamp);
-        json.set("device", "ESP32_MAIN_2FA_MOTOR");
+        json.set("device", "ESP32_GATE_2FA_AUTO_LIGHTS");
         json.set("authState", getAuthStateString());
         json.set("faceEnabled", faceRecognitionEnabled);
+        json.set("autoLightEnabled", autoLightControlEnabled); // 🆕 NEW
         json.set("motorSpeed", motorController.getCurrentSpeed());
         
         if (uid.length() > 0) {
@@ -1569,6 +1727,21 @@ public:
     
     int getMotorSpeed() {
         return motorController.getCurrentSpeed();
+    }
+    
+    // 🆕 NEW: Auto light control methods
+    void setAutoLightControl(bool enabled) {
+        autoLightControlEnabled = enabled;
+        
+        if (WiFi.status() == WL_CONNECTED) {
+            Firebase.setBool(firebaseData, "/config/autoLightControlEnabled", enabled);
+        }
+        
+        Serial.printf("Auto Light Control %s\n", enabled ? "enabled" : "disabled");
+    }
+    
+    bool getAutoLightControlEnabled() {
+        return autoLightControlEnabled;
     }
 };
 
