@@ -1,4 +1,3 @@
-
 /*
  * ESP32-CAM - REAL Multi-Client Streaming (WebServer + HTTPS Proxy)
  * TRUE multi-client support up to 8 concurrent MJPEG streams
@@ -22,8 +21,8 @@
 // =============================================================================
 // CONFIGURATION
 // =============================================================================
-#define WIFI_SSID "THIEN NHAN"
-#define WIFI_PASSWORD "13022021"
+#define WIFI_SSID "    "
+#define WIFI_PASSWORD "     "
 #define FIREBASE_HOST "smart-home-b7a03-default-rtdb.asia-southeast1.firebasedatabase.app"
 #define FIREBASE_AUTH "AIzaSyAO-6fXi3A_gLZz_uf9JKpQUOuxLfu6r1I"
 
