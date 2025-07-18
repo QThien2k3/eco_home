@@ -1,16 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Home Enhanced Battery SoC v3.2 + Face Recognition - Fixed Version</title>
-    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -94,7 +90,7 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Alert Container with auto-dismiss */
+        /* Alert Container */
         #alertContainer {
             position: fixed;
             top: 20px;
@@ -159,7 +155,7 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        /* Connection Status */
+        /* Status Indicators */
         .connection-status {
             position: fixed;
             top: 20px;
@@ -214,7 +210,7 @@
             animation: pulse 1s infinite;
         }
 
-        /* 🔥 NEW: Gas Alert Status */
+        /* Gas Alert Status */
         .gas-alert-status {
             position: fixed;
             top: 120px;
@@ -222,34 +218,59 @@
             display: none;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 12px 20px;
+            border-radius: 25px;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 2px solid;
             z-index: 1000;
-            animation: pulse 1s infinite;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .gas-alert-status.warning {
             color: var(--warning-color);
             border-color: var(--warning-color);
-            background: rgba(245, 158, 11, 0.1);
+            background: rgba(245, 158, 11, 0.15);
             display: flex;
         }
 
         .gas-alert-status.danger {
             color: var(--danger-color);
             border-color: var(--danger-color);
-            background: rgba(239, 68, 68, 0.1);
+            background: rgba(239, 68, 68, 0.15);
             display: flex;
+        }
+
+        /* Temperature Status */
+        .temp-status {
+            position: fixed;
+            top: 170px;
+            left: 20px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--surface);
+            border: 1px solid;
+            z-index: 1000;
+        }
+
+        .temp-status.active {
+            display: flex;
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.1);
         }
 
         /* Instant Response Status */
         .instant-status {
             position: fixed;
-            top: 170px;
+            top: 220px;
             left: 20px;
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
@@ -847,7 +868,6 @@
             opacity: 1;
         }
 
-        /* CENTERED FACE FRAME FOR BETTER RECOGNITION */
         .face-frame {
             border: 3px solid #4facfe;
             border-radius: 15px;
@@ -918,7 +938,6 @@
             transition: width 0.3s ease;
         }
 
-        /* Auto capture progress indicator */
         .auto-capture-progress {
             position: fixed;
             top: 50%;
@@ -1804,7 +1823,7 @@
             background: rgba(16, 185, 129, 0.1);
         }
 
-        /* 🔧 FIXED: Energy Flow Visualization - No Demo Data */
+        /* Energy Flow Visualization */
         .energy-flow-container {
             height: 500px;
             position: relative;
@@ -1826,7 +1845,6 @@
             min-height: 500px;
         }
 
-        /* 🔧 FIXED: Energy stats - Hidden until data available */
         .energy-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1887,7 +1905,6 @@
             margin-top: 5px;
         }
 
-        /* 🔧 FIXED: No Data State */
         .energy-no-data {
             display: flex;
             flex-direction: column;
@@ -2175,7 +2192,7 @@
             color: #fff;
         }
 
-        /* 🔥 FIXED: Gas Alert Animation - Enhanced Visual Warning */
+        /* Gas Alert Animation */
         .gas-alert {
             animation: gasAlert 1s ease-in-out infinite !important;
             border: 2px solid var(--danger-color) !important;
@@ -2233,6 +2250,264 @@
             width: 100% !important;
             height: 250px !important;
         }
+
+        /* Auto Settings Tab Styles */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .control-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .section-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Temperature Control */
+        .temp-control {
+            margin: 25px 0;
+        }
+
+        .temp-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .temp-value {
+            font-size: 3em;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .temp-status-text {
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        .temp-slider-container {
+            margin: 20px 0;
+        }
+
+        .temp-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #3b82f6 0%, #ef4444 100%);
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .temp-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .temp-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .temp-range-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        .temp-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* Gas Control */
+        .gas-thresholds {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .threshold-input {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .threshold-input label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .threshold-input.warning label { color: var(--warning-color); }
+        .threshold-input.alert label { color: #ff6b35; }
+        .threshold-input.danger label { color: var(--danger-color); }
+
+        .threshold-input input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text-primary);
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .threshold-input.warning input:focus { border-color: var(--warning-color); }
+        .threshold-input.alert input:focus { border-color: #ff6b35; }
+        .threshold-input.danger input:focus { border-color: var(--danger-color); }
+
+        .threshold-input .threshold-description {
+            font-size: 0.8em;
+            margin-top: 5px;
+            color: var(--text-secondary);
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gas-status-display {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .gas-status-display.normal {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .gas-status-display.warning {
+            border-color: var(--warning-color);
+            background: rgba(245, 158, 11, 0.1);
+            animation: pulse 2s infinite;
+        }
+
+        .gas-status-display.danger {
+            border-color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+            animation: pulse 1s infinite;
+        }
+
+        .gas-ppm-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .gas-ppm-value.normal { color: var(--success-color); }
+        .gas-ppm-value.warning { color: var(--warning-color); }
+        .gas-ppm-value.danger { color: var(--danger-color); }
+
+        /* History Section */
+        .history-section {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--glass-bg);
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .history-time {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        .history-action {
+            font-weight: 600;
+        }
+
+        .history-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .history-status.temp { background: var(--primary-color); color: white; }
+        .history-status.gas { background: var(--warning-color); color: white; }
+        .history-status.light { background: var(--success-color); color: white; }
 
         /* Admin Panel */
         .admin-panel {
@@ -2384,7 +2659,6 @@
                 grid-template-columns: 1fr;
             }
 
-            /* Face Recognition Mobile Responsive */
             #videoStream {
                 min-height: 300px;
                 max-height: 400px;
@@ -2397,6 +2671,18 @@
             
             .btn {
                 margin-bottom: 5px;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .gas-thresholds {
+                grid-template-columns: 1fr;
+            }
+            
+            .temp-controls {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -2426,133 +2712,142 @@
     <div class="bg-particles" id="particles"></div>
 
     <!-- Alert Container -->
-    <div id="alertContainer"></div>
+<div id="alertContainer"></div>
 
-    <!-- Connection Status -->
-    <div class="connection-status disconnected" id="connectionStatus">
-        <i class="fas fa-circle"></i>
-        <span>Connecting...</span>
-    </div>
+<!-- Status Indicators -->
+<div class="connection-status disconnected" id="connectionStatus">
+    <i class="fas fa-circle"></i>
+    <span>Connecting...</span>
+</div>
 
-    <!-- Security Status -->
-    <div class="security-status armed" id="securityStatus">
-        <i class="fas fa-shield-alt"></i>
-        <span>System Armed</span>
-    </div>
+<div class="security-status armed" id="securityStatus">
+    <i class="fas fa-shield-alt"></i>
+    <span>System Armed</span>
+</div>
 
-    <!-- 🔥 NEW: Gas Alert Status -->
-    <div class="gas-alert-status" id="gasAlertStatus">
-        <i class="fas fa-fire"></i>
-        <span id="gasAlertText">Gas Alert</span>
-    </div>
+<!-- Gas Alert Status -->
+<div class="gas-alert-status" id="gasAlertStatus">
+    <i class="fas fa-fire"></i>
+    <span id="gasAlertText">Gas Alert</span>
+</div>
 
-    <!-- Instant Response Status -->
-    <div class="instant-status">
-        <i class="fas fa-bolt"></i> INSTANT RESPONSE
-    </div>
+<!-- Temperature Status -->
+<div class="temp-status" id="tempStatus">
+    <i class="fas fa-thermometer-half"></i>
+    <span id="tempStatusText">Auto Temp: ON</span>
+</div>
 
-    <!-- CORS Status for Face Recognition -->
-    <div class="cors-status" id="corsStatus">
-        <i class="fas fa-circle"></i> CORS: Checking...
-    </div>
+<!-- Instant Response Status -->
+<div class="instant-status">
+    <i class="fas fa-bolt"></i> INSTANT RESPONSE
+</div>
 
-    <!-- Auto Capture Progress for Face Recognition -->
-    <div class="auto-capture-progress" id="autoCaptureProgress">
-        <div class="spinner-border text-primary mb-3" role="status"></div>
-        <h4 id="captureMessage">Preparing...</h4>
-        <div class="capture-countdown" id="captureCountdown"></div>
-        <button class="btn btn-danger mt-3" onclick="forceStopCapture()">
-            <i class="fas fa-stop"></i> Force Stop
-        </button>
-    </div>
+<!-- CORS Status for Face Recognition -->
+<div class="cors-status" id="corsStatus">
+    <i class="fas fa-circle"></i> CORS: Checking...
+</div>
 
-    <!-- LOGIN PAGE -->
-    <div id="loginPage" class="page active">
-        <div class="login-container">
-            <div class="login-card">
-                <div class="login-header">
-                    <h1><i class="fas fa-home"></i> Smart Home</h1>
-                    <p>Smart Home Management System </p>
+<!-- Auto Capture Progress for Face Recognition -->
+<div class="auto-capture-progress" id="autoCaptureProgress">
+    <div class="spinner-border text-primary mb-3" role="status"></div>
+    <h4 id="captureMessage">Preparing...</h4>
+    <div class="capture-countdown" id="captureCountdown"></div>
+    <button class="btn btn-danger mt-3" onclick="forceStopCapture()">
+        <i class="fas fa-stop"></i> Force Stop
+    </button>
+</div>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="page active">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1><i class="fas fa-home"></i> Smart Home</h1>
+                <p>Enhanced v4.0 - Complete Integration</p>
+            </div>
+
+            <div id="loginAlert"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="username" placeholder="Enter username" required>
                 </div>
-
-                <div id="loginAlert"></div>
-
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label class="form-label">Username</label>
-                        <input type="text" class="form-input" id="username" placeholder="Enter username" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-input" id="password" placeholder="Enter password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-sign-in-alt"></i>
-                        <span>Login</span>
-                    </button>
-                </form>
-
-                <div style="margin-top: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; font-size: 0.9rem;">
-                    <div style="font-weight: 600; margin-bottom: 5px;">🔑 Default Account:</div>
-                    <div>Username: <code>admin</code></div>
-                    <div>Password: <code>admin123</code></div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="password" placeholder="Enter password" required>
                 </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Login</span>
+                </button>
+            </form>
+
+            <div style="margin-top: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; font-size: 0.9rem;">
+                <div style="font-weight: 600; margin-bottom: 5px;">🔑 Default Account:</div>
+                <div>Username: <code>admin</code></div>
+                <div>Password: <code>admin123</code></div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- MAIN DASHBOARD -->
-    <div id="dashboardPage" class="page">
-        <!-- Navigation -->
-        <nav class="top-nav">
-            <div class="nav-brand">
-                <i class="fas fa-home"></i> Smart Home v3.2 + AI 🤖
+<!-- MAIN DASHBOARD -->
+<div id="dashboardPage" class="page">
+    <!-- Navigation -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <i class="fas fa-home"></i> Smart Home v4.0 Complete Integration
+        </div>
+        <div class="nav-user">
+            <div class="user-info" id="userInfo">
+                <div class="user-avatar" id="userAvatar">A</div>
+                <span id="userDisplayName">Loading...</span>
             </div>
-            <div class="nav-user">
-                <div class="user-info" id="userInfo">
-                    <div class="user-avatar" id="userAvatar">A</div>
-                    <span id="userDisplayName">Loading...</span>
-                </div>
-                <button class="btn-outline" id="adminPanelBtn" style="display: none;">
-                    <i class="fas fa-cogs"></i> Admin Panel
+            <button class="btn-outline" id="adminPanelBtn" style="display: none;">
+                <i class="fas fa-cogs"></i> Admin Panel
+            </button>
+            <button class="btn-outline" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Enhanced Tabs -->
+        <div class="dashboard-tabs">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('gate')">
+                    <i class="fas fa-door-open"></i>
+                    <span>Gate Control</span>
                 </button>
-                <button class="btn-outline" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+                <button class="tab-button" onclick="switchTab('home')">
+                    <i class="fas fa-home"></i>
+                    <span>Home Control</span>
+                </button>
+                <button class="tab-button" onclick="switchTab('face')">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Face Recognition</span>
+                </button>
+                <button class="tab-button" onclick="switchTab('settings')">
+                    <i class="fas fa-cogs"></i>
+                    <span>Auto Settings</span>
                 </button>
             </div>
-        </nav>
+        </div>
 
-        <div class="dashboard-container">
-            <!-- Tabs -->
-            <div class="dashboard-tabs">
-                <div class="tab-buttons">
-                    <button class="tab-button active" onclick="switchTab('gate')">
-                        <i class="fas fa-door-open"></i>
-                        <span>Gate Control</span>
-                    </button>
-                    <button class="tab-button" onclick="switchTab('home')">
-                        <i class="fas fa-home"></i>
-                        <span>Home Control</span>
-                    </button>
-                    <button class="tab-button" onclick="switchTab('face')">
-                        <i class="fas fa-user-circle"></i>
-                        <span>Face Recognition</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Smart Gate Tab -->
-            <div id="gateTab" class="tab-content active">
-                <div class="gate-dashboard">
-                    <div class="dashboard-grid">
-                        <!-- Door Control -->
-                        <div class="card door-control">
-                            <div class="card-header">
-                                <div class="card-icon"><i class="fas fa-door-open"></i></div>
-                                <div class="card-title">Door Control</div>
-                            </div>
-                            
-                            <div class="door-visualization">
+        <!-- Smart Gate Tab -->
+        <div id="gateTab" class="tab-content active">
+            <div class="gate-dashboard">
+                <div class="dashboard-grid">
+                    <!-- Door Control -->
+                    <div class="card door-control">
+                        <div class="card-header">
+                            <div class="card-icon"><i class="fas fa-door-open"></i></div>
+                            <div class="card-title">Door Control</div>
+                        </div>
+                        
+                        <div class="door-visualization">
                                 <div class="door-frame">
                                     <div class="door-panel" id="doorPanel">
                                         <div class="door-handle"></div>
@@ -2881,11 +3176,11 @@
                             </div>
                         </div>
 
-                        <!-- 🔧 FIXED: Energy Flow Visualization - Wait for Real Data -->
+                        <!-- Energy Flow Visualization -->
                         <div class="glass-card">
                             <h2 style="margin-bottom: 20px;"><i class="fas fa-bolt"></i> Energy Flow</h2>
                             
-                            <!-- Power Source Indicator - Hidden until data available -->
+                            <!-- Power Source Indicator -->
                             <div class="power-source-indicator" id="powerSourceIndicator">
                                 <div class="power-source-icon" id="powerSourceIcon">
                                     <i class="fas fa-plug"></i>
@@ -2896,7 +3191,7 @@
                                 </div>
                             </div>
                             
-                            <!-- Energy flow visualization - Shows waiting state -->
+                            <!-- Energy flow visualization -->
                             <div class="energy-flow-container" id="energyFlowContainer">
                                 <div class="energy-no-data" id="energyNoData">
                                     <i class="fas fa-bolt"></i>
@@ -2906,7 +3201,7 @@
                                 <canvas id="energyCanvas" class="energy-canvas" style="display: none;"></canvas>
                             </div>
                             
-                            <!-- Energy stats - Hidden until data available -->
+                            <!-- Energy stats -->
                             <div class="energy-stats" id="energyStats">
                                 <div class="energy-stat">
                                     <div class="energy-percentage" id="solarPercent">0%</div>
@@ -2972,7 +3267,7 @@
                             </div>
                         </div>
 
-                        <!-- 🔥 FIXED: Kitchen with Enhanced Gas Alert -->
+                        <!-- Kitchen -->
                         <div class="room-card">
                             <div class="room-header">
                                 <div class="room-title">
@@ -2997,7 +3292,7 @@
                                     <i class="fas fa-fire" style="font-size: 2em; color: #f59e0b;"></i>
                                     <div class="sensor-value" id="gasValue">--</div>
                                     <div class="sensor-label">Gas Concentration (ppm)</div>
-                                    <div class="sensor-status" id="gasStatus">Starting up...</div>
+                                    <div class="sensor-status" id="gasStatus">Calibrating...</div>
                                 </div>
                             </div>
                         </div>
@@ -3021,13 +3316,6 @@
                                     <i class="fas fa-fan control-icon fan-icon"></i>
                                     <span>Fan</span>
                                 </button>
-                            </div>
-                            <div class="sensor-grid">
-                                <div class="sensor-item" style="grid-column: span 2;">
-                                    <i class="fas fa-sun" style="font-size: 2em; color: #fbbf24;"></i>
-                                    <div class="sensor-value" id="lightStatus">Bright</div>
-                                    <div class="sensor-label">Light Status</div>
-                                </div>
                             </div>
                         </div>
                         
@@ -3117,7 +3405,7 @@
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-icon" style="background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);"><i class="fas fa-user-plus"></i></div>
-                                <div class="card-title">Face Enrollment (Fixed Auto Capture)</div>
+                                <div class="card-title">Face Enrollment</div>
                             </div>
                             
                             <div class="input-group">
@@ -3174,6 +3462,162 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Auto Settings Tab -->
+            <div id="settingsTab" class="tab-content">
+                <div style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+                    
+                    <!-- Settings Grid -->
+                    <div class="settings-grid">
+                        
+                        <!-- Temperature Control Section -->
+                        <div class="control-section">
+                            <div class="section-header">
+                                <div class="section-icon" style="background: var(--gradient-primary);">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div>
+                                    <div class="section-title">Auto Temperature Control</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.9em;">Automatic fan control based on temperature threshold</div>
+                                </div>
+                            </div>
+
+                            <!-- Current Temperature Display -->
+                            <div class="temp-display">
+                                <div class="temp-value" id="currentTempDisplay">--°C</div>
+                                <div class="temp-status-text" id="tempStatusDisplay">Loading temperature...</div>
+                            </div>
+
+                            <!-- Temperature Threshold Slider -->
+                            <div class="temp-control">
+                                <label style="display: block; margin-bottom: 15px; font-weight: 600;">
+                                    <i class="fas fa-sliders-h"></i> Target Temperature: <span id="tempThresholdDisplay">28°C</span>
+                                </label>
+                                <div class="temp-slider-container">
+                                    <input type="range" min="16" max="40" value="28" class="temp-slider" id="tempThresholdSlider">
+                                    <div class="temp-range-labels">
+                                        <span>16°C</span>
+                                        <span>28°C</span>
+                                        <span>40°C</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Temperature Controls -->
+                            <div class="temp-controls">
+                                <button class="btn btn-success" id="enableTempBtn" onclick="toggleTemperatureControl()">
+                                    <i class="fas fa-play"></i> Enable Auto
+                                </button>
+                                <button class="btn btn-danger" id="disableTempBtn" onclick="toggleTemperatureControl()" style="display: none;">
+                                    <i class="fas fa-pause"></i> Disable Auto
+                                </button>
+                                <button class="btn btn-primary" onclick="saveTemperatureSettings()">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                            </div>
+
+                            <!-- Temperature Info -->
+                            <div style="margin-top: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid var(--primary-color);">
+                                <div style="font-weight: 600; margin-bottom: 5px;">
+                                    <i class="fas fa-info-circle"></i> How it works:
+                                </div>
+                                <div style="font-size: 0.9em; color: var(--text-secondary);">
+                                    • Fan turns ON when temperature > threshold + 0.5°C<br>
+                                    • Fan turns OFF when temperature < threshold - 0.5°C<br>
+                                    • Hysteresis prevents oscillation
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gas Detection Control Section -->
+                        <div class="control-section">
+                            <div class="section-header">
+                                <div class="section-icon" style="background: var(--gradient-warning);">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div>
+                                    <div class="section-title">Gas Leak Detection</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.9em;">3-level gas detection with automatic fan control</div>
+                                </div>
+                            </div>
+
+                            <!-- Current Gas Status -->
+                            <div class="gas-status-display normal" id="gasStatusDisplay">
+                                <div class="gas-ppm-value normal" id="currentGasPPM">0 ppm</div>
+                                <div id="gasLevelText">Normal Level</div>
+                                <div style="font-size: 0.9em; color: var(--text-secondary); margin-top: 10px;">
+                                    <span id="gasCalibrationStatus">Sensor calibrating...</span>
+                                </div>
+                            </div>
+
+                            <!-- Gas Thresholds -->
+                            <div style="margin: 20px 0;">
+                                <label style="display: block; margin-bottom: 15px; font-weight: 600;">
+                                    <i class="fas fa-exclamation-triangle"></i> Gas Alert Thresholds (PPM):
+                                </label>
+                                <div class="gas-thresholds">
+                                    <div class="threshold-input warning">
+                                        <label>⚠️ Warning Level</label>
+                                        <input type="number" id="gasThreshold1" value="200" min="50" max="2000" step="10">
+                                        <div class="threshold-description">Turns on 1 fan</div>
+                                    </div>
+                                    <div class="threshold-input alert">
+                                        <label>🔶 Alert Level</label>
+                                        <input type="number" id="gasThreshold2" value="500" min="100" max="2000" step="10">
+                                        <div class="threshold-description">Turns on 2 fans</div>
+                                    </div>
+                                    <div class="threshold-input danger">
+                                        <label>🚨 Danger Level</label>
+                                        <input type="number" id="gasThreshold3" value="800" min="200" max="2000" step="10">
+                                        <div class="threshold-description">Turns on 3 fans</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Gas Controls -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <button class="btn btn-warning" onclick="saveGasSettings()">
+                                    <i class="fas fa-save"></i> Save Thresholds
+                                </button>
+                                <button class="btn btn-info" onclick="resetGasSettings()">
+                                    <i class="fas fa-undo"></i> Reset Default
+                                </button>
+                            </div>
+
+                            <!-- Gas Info -->
+                            <div style="margin-top: 20px; padding: 15px; background: rgba(245, 158, 11, 0.1); border-radius: 10px; border: 1px solid var(--warning-color);">
+                                <div style="font-weight: 600; margin-bottom: 5px;">
+                                    <i class="fas fa-shield-alt"></i> Auto Fan Response:
+                                </div>
+                                <div style="font-size: 0.9em; color: var(--text-secondary);">
+                                    • Warning: Kitchen fan (fan3) activates<br>
+                                    • Alert: Kitchen + Bedroom fans activate<br>
+                                    • Danger: All fans activate for safety
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Auto Control History -->
+                    <div class="history-section">
+                        <div class="history-header">
+                            <h3><i class="fas fa-history"></i> Auto Control History</h3>
+                            <button class="btn btn-secondary" onclick="refreshHistory()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="history-list" id="autoHistoryList">
+                            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                <i class="fas fa-clock" style="font-size: 3em; margin-bottom: 15px; opacity: 0.3;"></i>
+                                <p>Auto control history will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -3246,7 +3690,7 @@
 
     <script>
         // =================================================================
-        // FIREBASE CONFIGURATION - FIXED TO MATCH ESP32
+        // FIREBASE CONFIGURATION
         // =================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAO-6fXi3A_gLZz_uf9JKpQUOuxLfu6r1I",
@@ -3276,7 +3720,7 @@
         };
 
         // =================================================================
-        // GLOBAL VARIABLES & STATE - FIXED GAS ALERT + ENERGY FLOW
+        // GLOBAL VARIABLES & STATE
         // =================================================================
         let currentUser = null;
         let usersData = {};
@@ -3295,10 +3739,15 @@
             failCount: 0,
             gateCurrentStatus: 'closed',
             currentCameraIP: '',
-            // 🔥 NEW: Gas alert state
             gasAlertActive: false,
             gasLevel: 'NORMAL',
-            gasPPM: 0
+            gasPPM: 0,
+            gasThresholds: { warning: 200, alert: 500, danger: 800 },
+            temperatureThreshold: 28,
+            autoTemperatureEnabled: true,
+            autoLightEnabled: true,
+            currentTemperature: 0,
+            currentHumidity: 0
         };
 
         // Face Recognition State
@@ -3336,7 +3785,6 @@
             lastHumidTime: 0
         };
         
-        // 🔧 FIXED: Energy flow state - No demo data
         let energyFlowState = {
             hasData: false,
             currentPowerSource: 0,
@@ -3354,6 +3802,9 @@
         let commandQueue = [];
         let lastCommandTime = 0;
 
+        // Auto Control History
+        let autoControlHistory = [];
+
         // Enhanced Battery Configuration for 4S Li-ion (4x18650 1200mAh)
         const BATTERY_CONFIG = {
             CAPACITY_MAH: 4800,
@@ -3368,7 +3819,7 @@
         };
 
         // =================================================================
-        // ALERT MANAGER WITH AUTO-DISMISS AND CLICKABLE CLOSE
+        // ALERT MANAGER WITH AUTO-DISMISS
         // =================================================================
         const alertManager = {
             alerts: new Map(),
@@ -3451,7 +3902,81 @@
         };
 
         // =================================================================
-        // 🔥 FIXED: GAS ALERT MANAGEMENT SYSTEM
+        // AUTO TEMPERATURE CONTROL FUNCTIONS
+        // =================================================================
+        function updateTemperatureControlUI(enabled) {
+            const enableBtn = document.getElementById('enableTempBtn');
+            const disableBtn = document.getElementById('disableTempBtn');
+            const tempStatus = document.getElementById('tempStatus');
+            
+            if (enabled) {
+                enableBtn.style.display = 'none';
+                disableBtn.style.display = 'inline-flex';
+                tempStatus.classList.add('active');
+                document.getElementById('tempStatusText').textContent = 'Auto Temp: ON';
+            } else {
+                enableBtn.style.display = 'inline-flex';
+                disableBtn.style.display = 'none';
+                tempStatus.classList.remove('active');
+                document.getElementById('tempStatusText').textContent = 'Auto Temp: OFF';
+            }
+        }
+
+        function updateTemperatureStatus() {
+            const currentTemp = systemState.currentTemperature;
+            const threshold = systemState.temperatureThreshold;
+            const enabled = systemState.autoTemperatureEnabled;
+            
+            if (enabled && currentTemp > 0) {
+                const upperThreshold = threshold + 0.5;
+                const lowerThreshold = threshold - 0.5;
+                
+                if (currentTemp >= upperThreshold) {
+                    document.getElementById('tempStatusDisplay').textContent = `🔥 Hot! Fan should be ON (${currentTemp.toFixed(1)}°C ≥ ${upperThreshold.toFixed(1)}°C)`;
+                    document.getElementById('tempStatusDisplay').style.color = '#ef4444';
+                } else if (currentTemp <= lowerThreshold) {
+                    document.getElementById('tempStatusDisplay').textContent = `❄️ Cool! Fan should be OFF (${currentTemp.toFixed(1)}°C ≤ ${lowerThreshold.toFixed(1)}°C)`;
+                    document.getElementById('tempStatusDisplay').style.color = '#3b82f6';
+                } else {
+                    document.getElementById('tempStatusDisplay').textContent = `✅ In range! Fan will activate if temp rises to ${upperThreshold.toFixed(1)}°C`;
+                    document.getElementById('tempStatusDisplay').style.color = '#10b981';
+                }
+            } else {
+                document.getElementById('tempStatusDisplay').textContent = enabled ? 'Waiting for temperature data...' : 'Auto temperature control disabled';
+                document.getElementById('tempStatusDisplay').style.color = '#94a3b8';
+            }
+        }
+
+        function toggleTemperatureControl() {
+            const newState = !systemState.autoTemperatureEnabled;
+            systemState.autoTemperatureEnabled = newState;
+            
+            database.ref('/settings/autoTemperatureEnabled').set(newState);
+            
+            alertManager.show('temp-toggle', 
+                `🌡️ Auto temperature control ${newState ? 'enabled' : 'disabled'}`, 
+                newState ? 'success' : 'warning', 2000);
+        }
+
+        function saveTemperatureSettings() {
+            const threshold = parseInt(document.getElementById('tempThresholdSlider').value);
+            
+            if (threshold < 16 || threshold > 40) {
+                alertManager.show('temp-error', '❌ Temperature must be between 16°C and 40°C', 'danger', 3000);
+                return;
+            }
+            
+            systemState.temperatureThreshold = threshold;
+            
+            database.ref('/settings/temperatureThreshold').set(threshold);
+            
+            alertManager.show('temp-saved', `🌡️ Temperature threshold saved: ${threshold}°C`, 'success', 2000);
+            
+            updateTemperatureStatus();
+        }
+
+        // =================================================================
+        // GAS ALERT MANAGEMENT SYSTEM
         // =================================================================
         function updateGasAlertStatus(level, ppm, message) {
             const gasAlertStatus = document.getElementById('gasAlertStatus');
@@ -3463,29 +3988,25 @@
             if (level === 'DANGER') {
                 systemState.gasAlertActive = true;
                 gasAlertStatus.className = 'gas-alert-status danger';
-                gasAlertText.textContent = `DANGER! ${ppm} ppm`;
+                gasAlertText.textContent = `DANGER! ${ppm.toFixed(0)} ppm`;
                 
-                // Show major alert notification
-                alertManager.show('gas-danger', `🚨 GAS DANGER! Concentration: ${ppm} ppm - Evacuate immediately!`, 'danger', 10000);
+                alertManager.show('gas-danger', `🚨 GAS DANGER! Concentration: ${ppm.toFixed(0)} ppm - Evacuate immediately!`, 'danger', 10000);
                 
                 console.log(`🔥 GAS DANGER ALERT: ${ppm} ppm`);
                 
             } else if (level === 'WARNING') {
                 systemState.gasAlertActive = true;
                 gasAlertStatus.className = 'gas-alert-status warning';
-                gasAlertText.textContent = `Warning: ${ppm} ppm`;
+                gasAlertText.textContent = `Warning: ${ppm.toFixed(0)} ppm`;
                 
-                // Show warning notification
-                alertManager.show('gas-warning', `⚠️ Gas Warning: ${ppm} ppm - Check for leaks!`, 'warning', 7000);
+                alertManager.show('gas-warning', `⚠️ Gas Warning: ${ppm.toFixed(0)} ppm - Check for leaks!`, 'warning', 7000);
                 
                 console.log(`🔥 GAS WARNING: ${ppm} ppm`);
                 
             } else {
-                // Normal level - hide alert
                 systemState.gasAlertActive = false;
                 gasAlertStatus.style.display = 'none';
                 
-                // Clear gas alerts
                 alertManager.remove('gas-danger');
                 alertManager.remove('gas-warning');
                 
@@ -3493,8 +4014,704 @@
             }
         }
 
+        function updateGasDisplay(ppm, isCalibrated) {
+            systemState.gasPPM = ppm;
+            
+            // Update main display
+            document.getElementById('gasValue').textContent = ppm.toFixed(0);
+            document.getElementById('currentGasPPM').textContent = ppm.toFixed(0) + ' ppm';
+            
+            // Update calibration status
+            const statusEl = document.getElementById('gasCalibrationStatus');
+            if (!isCalibrated) {
+                statusEl.textContent = 'Sensor calibrating... Please wait 2 minutes';
+                statusEl.style.color = '#f59e0b';
+                document.getElementById('gasStatus').textContent = 'Calibrating...';
+                return;
+            } else {
+                statusEl.textContent = 'Sensor calibrated and ready';
+                statusEl.style.color = '#10b981';
+            }
+            
+            // Determine gas level
+            const thresholds = systemState.gasThresholds;
+            let level = 'normal';
+            let levelText = 'Normal Level';
+            let statusText = 'Normal';
+            let statusColor = '#4ade80';
+            
+            if (ppm >= thresholds.danger) {
+                level = 'danger';
+                levelText = '🚨 DANGER! Evacuate immediately!';
+                statusText = 'DANGER!';
+                statusColor = '#ef4444';
+            } else if (ppm >= thresholds.alert) {
+                level = 'warning';
+                levelText = '🔶 HIGH ALERT! Check for gas leaks!';
+                statusText = 'Alert';
+                statusColor = '#ff6b35';
+            } else if (ppm >= thresholds.warning) {
+                level = 'warning';
+                levelText = '⚠️ WARNING! Monitor closely!';
+                statusText = 'Warning';
+                statusColor = '#fbbf24';
+            }
+            
+            // Update gas status display
+            const gasStatusDisplay = document.getElementById('gasStatusDisplay');
+            const gasPpmValue = document.getElementById('currentGasPPM');
+            const gasLevelText = document.getElementById('gasLevelText');
+            const gasStatus = document.getElementById('gasStatus');
+            const gasItem = document.getElementById('gasItem');
+            
+            gasStatusDisplay.className = `gas-status-display ${level}`;
+            gasPpmValue.className = `gas-ppm-value ${level}`;
+            gasLevelText.textContent = levelText;
+            gasStatus.textContent = statusText;
+            gasStatus.style.background = statusColor;
+            gasStatus.style.color = level === 'warning' ? '#000' : '#fff';
+            
+            // Apply room card animations
+            gasItem.classList.remove('gas-alert', 'gas-warning');
+            if (level === 'danger') {
+                gasItem.classList.add('gas-alert');
+            } else if (level === 'warning') {
+                gasItem.classList.add('gas-warning');
+            }
+        }
+
+        function saveGasSettings() {
+            const warning = parseInt(document.getElementById('gasThreshold1').value);
+            const alert = parseInt(document.getElementById('gasThreshold2').value);
+            const danger = parseInt(document.getElementById('gasThreshold3').value);
+            
+            // Validation
+            if (warning >= alert || alert >= danger) {
+                alertManager.show('gas-error', '❌ Thresholds must be in ascending order: Warning < Alert < Danger', 'danger', 4000);
+                return;
+            }
+            
+            if (warning < 50 || danger > 2000) {
+                alertManager.show('gas-error', '❌ Thresholds must be between 50-2000 PPM', 'danger', 3000);
+                return;
+            }
+            
+            const thresholds = { warning, alert, danger };
+            systemState.gasThresholds = thresholds;
+            
+            database.ref('/settings/gasThresholds').set(thresholds);
+            
+            alertManager.show('gas-saved', `🔥 Gas thresholds saved: ${warning}/${alert}/${danger} PPM`, 'success', 3000);
+        }
+
+        function resetGasSettings() {
+            const defaultThresholds = { warning: 200, alert: 500, danger: 800 };
+            
+            document.getElementById('gasThreshold1').value = 200;
+            document.getElementById('gasThreshold2').value = 500;
+            document.getElementById('gasThreshold3').value = 800;
+            
+            systemState.gasThresholds = defaultThresholds;
+            database.ref('/settings/gasThresholds').set(defaultThresholds);
+            
+            alertManager.show('gas-reset', '🔄 Gas thresholds reset to default values', 'info', 2000);
+        }
+
         // =================================================================
-        // 🔧 FIXED: ENERGY FLOW VISUALIZATION - WAIT FOR REAL DATA
+        // AUTO LIGHT CONTROL FUNCTIONS
+        // =================================================================
+        function triggerAutoLightActivation(trigger) {
+            if (systemState.autoLightEnabled) {
+                console.log('🔅 Auto Light Activation triggered by:', trigger);
+                
+                // Turn on Living Room and Garage lights
+                database.ref('/commands/light1').set(true);
+                database.ref('/commands/light4').set(true);
+                
+                alertManager.show('auto-light', '💡 Auto lights activated (Living Room + Garage)', 'success', 3000);
+                
+                // Log auto light event
+                logAutoControlEvent('auto_light_activation', {
+                    trigger: trigger,
+                    lights_activated: 'light1, light4',
+                    timestamp: Date.now()
+                });
+            }
+        }
+
+        // =================================================================
+        // AUTO CONTROL HISTORY FUNCTIONS
+        // =================================================================
+        function updateAutoControlHistory(history) {
+            autoControlHistory = [];
+            
+            if (!history) {
+                displayAutoHistory([]);
+                return;
+            }
+            
+            // Filter for auto control events only
+            Object.entries(history).forEach(([key, event]) => {
+                if (event.type && (
+                    event.type.includes('auto_temperature') ||
+                    event.type.includes('gas_auto_fan') ||
+                    event.type.includes('auto_light_activation') ||
+                    event.type.includes('manual_override')
+                )) {
+                    const timestamp = event.timestamp ? new Date(event.timestamp * 1000) : new Date();
+                    autoControlHistory.push({
+                        key,
+                        timestamp: timestamp.toLocaleString('en-US'),
+                        type: event.type,
+                        device: event.device || 'system',
+                        action: event.action || event.fansActivated || 'unknown',
+                        user: event.user || 'system',
+                        data: event
+                    });
+                }
+            });
+            
+            // Sort by timestamp (newest first)
+            autoControlHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            displayAutoHistory(autoControlHistory.slice(0, 15)); // Show last 15 events
+        }
+
+        function displayAutoHistory(historyData) {
+            const container = document.getElementById('autoHistoryList');
+            
+            if (historyData.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <i class="fas fa-clock" style="font-size: 3em; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p>No auto control events yet</p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">Events will appear when auto controls are triggered</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = historyData.map(item => {
+                const eventInfo = getAutoEventInfo(item.type, item.data);
+                return `
+                    <div class="history-item">
+                        <div>
+                            <div class="history-action">${eventInfo.icon} ${eventInfo.title}</div>
+                            <div class="history-time">${item.timestamp}</div>
+                            <div style="font-size: 0.9em; color: var(--text-secondary); margin-top: 5px;">
+                                ${eventInfo.description}
+                            </div>
+                        </div>
+                        <div class="history-status ${eventInfo.category}">${eventInfo.status}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getAutoEventInfo(type, data) {
+            switch (type) {
+                case 'auto_temperature_control':
+                    return {
+                        icon: '🌡️',
+                        title: 'Auto Temperature Control',
+                        description: `Temperature: ${data.temperature?.toFixed(1) || 'N/A'}°C, Threshold: ${data.threshold?.toFixed(1) || 'N/A'}°C, Fan: ${data.fanState ? 'ON' : 'OFF'}`,
+                        status: data.fanState ? 'Active' : 'Idle',
+                        category: 'temp'
+                    };
+                case 'gas_auto_fan_control':
+                    return {
+                        icon: '🔥',
+                        title: 'Gas Auto Fan Control',
+                        description: `Gas Level: ${data.gasLevel || 'Unknown'}, PPM: ${data.gasPPM?.toFixed(0) || 'N/A'}, Fans: ${data.fansActivated || 0}`,
+                        status: `Level ${data.gasLevel || '?'}`,
+                        category: 'gas'
+                    };
+                case 'auto_light_activation':
+                    return {
+                        icon: '💡',
+                        title: 'Auto Light Activation',
+                        description: `Triggered by: ${data.trigger || 'Unknown'}, Lights: ${data.lights_activated || 'N/A'}`,
+                        status: 'Activated',
+                        category: 'light'
+                    };
+                case 'manual_override':
+                    return {
+                        icon: '🎛️',
+                        title: 'Manual Override',
+                        description: `Device: ${data.device || 'Unknown'}, Action: ${data.action || 'Unknown'}, User: ${data.user || 'Unknown'}`,
+                        status: 'Override',
+                        category: 'temp'
+                    };
+                default:
+                    return {
+                        icon: '⚙️',
+                        title: 'System Event',
+                        description: type,
+                        status: 'Info',
+                        category: 'temp'
+                    };
+            }
+        }
+
+        function logAutoControlEvent(eventType, eventData) {
+            const timestamp = Math.floor(Date.now() / 1000);
+            const logId = `${timestamp}_${eventType}_${Math.random().toString(36).substr(2, 9)}`;
+            const logPath = `/history/${logId}`;
+            
+            const logData = {
+                type: eventType,
+                timestamp: timestamp,
+                device: 'ESP32_DASHBOARD_v4.0',
+                ...eventData
+            };
+            
+            database.ref(logPath).set(logData).catch(error => {
+                console.error('Error logging auto control event:', error);
+            });
+        }
+
+        function refreshHistory() {
+            alertManager.show('history-refresh', '🔄 Refreshing auto control history...', 'info', 1500);
+            
+            database.ref('/history').limitToLast(20).once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    updateAutoControlHistory(snapshot.val());
+                    alertManager.show('history-refreshed', '✅ History refreshed', 'success', 1500);
+                } else {
+                    displayAutoHistory([]);
+                    alertManager.show('history-empty', 'ℹ️ No history found', 'info', 1500);
+                }
+            }).catch(error => {
+                alertManager.show('history-error', '❌ Error refreshing history', 'danger', 3000);
+            });
+        }
+
+        // =================================================================
+        // FIREBASE USER MANAGEMENT SYSTEM
+        // =================================================================
+        
+        // Initialize default admin user in Firebase
+        async function initializeDefaultAdmin() {
+            try {
+                const adminRef = database.ref('/users/admin');
+                const snapshot = await adminRef.once('value');
+                
+                if (!snapshot.exists()) {
+                    console.log('🔥 Creating default admin user in Firebase...');
+                    await adminRef.set({
+                        password: 'admin123',
+                        displayName: 'Administrator',
+                        role: 'admin',
+                        createdAt: Date.now(),
+                        createdBy: 'system'
+                    });
+                    console.log('✅ Default admin user created');
+                }
+            } catch (error) {
+                console.error('❌ Error initializing admin user:', error);
+            }
+        }
+
+        // Load users from Firebase
+        async function loadUsersFromFirebase() {
+            try {
+                const snapshot = await database.ref('/users').once('value');
+                if (snapshot.exists()) {
+                    usersData = snapshot.val();
+                    console.log('🔥 Users loaded from Firebase:', Object.keys(usersData));
+                } else {
+                    console.log('🔥 No users found in Firebase');
+                    usersData = {};
+                }
+            } catch (error) {
+                console.error('❌ Error loading users from Firebase:', error);
+                usersData = {};
+            }
+        }
+
+        // Enhanced Login function with fallback
+        async function login(username, password) {
+            try {
+                console.log('🔥 Attempting login for:', username);
+                
+                const loginBtn = document.querySelector('#loginForm button');
+                const originalText = loginBtn.innerHTML;
+                loginBtn.innerHTML = '<div class="loading"></div> Logging in...';
+                loginBtn.disabled = true;
+                
+                if (username === 'admin' && password === 'admin123') {
+                    console.log('🔧 Using fallback admin login');
+                    currentUser = {
+                        username: 'admin',
+                        displayName: 'Administrator',
+                        role: 'admin'
+                    };
+                    
+                    localStorage.setItem('smartHomeCurrentUser', JSON.stringify(currentUser));
+                    showLoginAlert('✅ Login successful!', 'success');
+                    
+                    setTimeout(() => {
+                        showPage('dashboard');
+                        updateUserDisplay();
+                    }, 1000);
+                    
+                    return true;
+                }
+                
+                try {
+                    await loadUsersFromFirebase();
+                    
+                    if (usersData[username] && usersData[username].password === password) {
+                        currentUser = {
+                            username: username,
+                            displayName: usersData[username].displayName,
+                            role: usersData[username].role || 'member'
+                        };
+                        
+                        localStorage.setItem('smartHomeCurrentUser', JSON.stringify(currentUser));
+                        showLoginAlert('✅ Login successful!', 'success');
+                        
+                        setTimeout(() => {
+                            showPage('dashboard');
+                            updateUserDisplay();
+                        }, 1000);
+                        
+                        return true;
+                    }
+                } catch (firebaseError) {
+                    console.warn('Firebase login failed, trying fallback...', firebaseError);
+                }
+                
+                showLoginAlert('❌ Invalid username or password!', 'danger');
+                return false;
+                
+            } catch (error) {
+                console.error('❌ Login error:', error);
+                showLoginAlert('❌ Login error: ' + error.message, 'danger');
+                return false;
+            } finally {
+                const loginBtn = document.querySelector('#loginForm button');
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Login</span>';
+                loginBtn.disabled = false;
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('smartHomeCurrentUser');
+            showPage('login');
+            alertManager.show('logout', '👋 Logged out successfully', 'info', 2000);
+        }
+
+        async function checkAuth() {
+            const savedUser = localStorage.getItem('smartHomeCurrentUser');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    showPage('dashboard');
+                    updateUserDisplay();
+                    return true;
+                } catch (error) {
+                    localStorage.removeItem('smartHomeCurrentUser');
+                    currentUser = null;
+                }
+            }
+            return false;
+        }
+
+        function updateUserDisplay() {
+            if (currentUser) {
+                document.getElementById('userDisplayName').textContent = currentUser.displayName;
+                document.getElementById('userAvatar').textContent = currentUser.displayName.charAt(0).toUpperCase();
+                
+                if (currentUser.role === 'admin') {
+                    document.getElementById('adminPanelBtn').style.display = 'block';
+                } else {
+                    document.getElementById('adminPanelBtn').style.display = 'none';
+                }
+            }
+        }
+
+        // =================================================================
+        // FIREBASE USER MANAGEMENT (ADMIN ONLY)
+        // =================================================================
+        async function createUser(username, password, displayName) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showAdminAlert('❌ You do not have permission to perform this action!', 'danger');
+                return false;
+            }
+            
+            try {
+                console.log('🔥 Creating user:', username);
+                
+                const createBtn = document.querySelector('#createUserForm button');
+                const originalText = createBtn.innerHTML;
+                createBtn.innerHTML = '<div class="loading"></div> Creating...';
+                createBtn.disabled = true;
+                
+                const userRef = database.ref(`/users/${username}`);
+                const snapshot = await userRef.once('value');
+                
+                if (snapshot.exists()) {
+                    showAdminAlert('❌ Username already exists!', 'danger');
+                    return false;
+                }
+                
+                const userData = {
+                    password: password,
+                    displayName: displayName,
+                    role: 'member',
+                    createdAt: Date.now(),
+                    createdBy: currentUser.username
+                };
+                
+                await userRef.set(userData);
+                
+                usersData[username] = userData;
+                
+                showAdminAlert('✅ Member created successfully!', 'success');
+                updateMembersTable();
+                document.getElementById('createUserForm').reset();
+                
+                console.log('✅ User created successfully in Firebase');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Create user error:', error);
+                showAdminAlert('❌ Error creating member: ' + error.message, 'danger');
+                return false;
+            } finally {
+                const createBtn = document.querySelector('#createUserForm button');
+                createBtn.innerHTML = '<i class="fas fa-user-plus"></i><span>Create Member</span>';
+                createBtn.disabled = false;
+            }
+        }
+
+        async function deleteUser(username) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showAdminAlert('❌ You do not have permission to perform this action!', 'danger');
+                return;
+            }
+            
+            if (username === 'admin') {
+                showAdminAlert('❌ Cannot delete admin account!', 'danger');
+                return;
+            }
+            
+            if (confirm(`🗑️ Are you sure you want to delete member "${username}"?\n\nThis action cannot be undone!`)) {
+                try {
+                    console.log('🔥 Deleting user:', username);
+                    
+                    await database.ref(`/users/${username}`).remove();
+                    
+                    delete usersData[username];
+                    
+                    showAdminAlert('✅ Member deleted successfully!', 'success');
+                    updateMembersTable();
+                    
+                    console.log('✅ User deleted successfully from Firebase');
+                    
+                } catch (error) {
+                    console.error('❌ Delete user error:', error);
+                    showAdminAlert('❌ Error deleting member: ' + error.message, 'danger');
+                }
+            }
+        }
+
+        async function updateMembersTable() {
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;"><div class="loading"></div> Loading...</td></tr>';
+            
+            try {
+                await loadUsersFromFirebase();
+                
+                tbody.innerHTML = '';
+                
+                if (Object.keys(usersData).length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No members yet</td></tr>';
+                    return;
+                }
+                
+                Object.entries(usersData).forEach(([username, userData]) => {
+                    const row = document.createElement('tr');
+                    const createdDate = userData.createdAt ? 
+                        new Date(userData.createdAt).toLocaleDateString('en-US') : 
+                        'N/A';
+                    
+                    row.innerHTML = `
+                        <td>${username}</td>
+                        <td>${userData.displayName}</td>
+                        <td>
+                            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.8em; background: ${
+                                userData.role === 'admin' ? 'var(--danger-color)' : 'var(--primary-color)'
+                            }; color: white;">
+                                ${userData.role === 'admin' ? 'Administrator' : 'Member'}
+                            </span>
+                        </td>
+                        <td>${createdDate}</td>
+                        <td>
+                            ${username !== 'admin' ? 
+                                `<button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8em;" onclick="deleteUser('${username}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>` : 
+                                '<span style="opacity: 0.5;">Cannot delete</span>'
+                            }
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('❌ Error updating members table:', error);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger-color);">❌ Error loading data</td></tr>';
+            }
+        }
+
+        // =================================================================
+        // ENHANCED BATTERY WIDGET FUNCTIONS
+        // =================================================================
+        
+        function calculateBatterySoC(voltage) {
+            const voltageCurve = [
+                [12.0, 0], [12.4, 3], [12.8, 8], [13.2, 15], [13.6, 25], [14.0, 40],
+                [14.4, 55], [14.8, 70], [15.2, 80], [15.6, 90], [16.0, 96], [16.8, 100]
+            ];
+            
+            if (voltage <= BATTERY_CONFIG.MIN_VOLTAGE) return 0;
+            if (voltage >= BATTERY_CONFIG.MAX_VOLTAGE) return 100;
+            
+            for (let i = 0; i < voltageCurve.length - 1; i++) {
+                if (voltage >= voltageCurve[i][0] && voltage <= voltageCurve[i + 1][0]) {
+                    const v1 = voltageCurve[i][0];
+                    const soc1 = voltageCurve[i][1];
+                    const v2 = voltageCurve[i + 1][0];
+                    const soc2 = voltageCurve[i + 1][1];
+                    
+                    const soc = soc1 + ((voltage - v1) / (v2 - v1)) * (soc2 - soc1);
+                    return Math.max(0, Math.min(100, soc));
+                }
+            }
+            
+            return 0;
+        }
+
+        function updateBatteryWidget(batteryData) {
+            if (!batteryData) return;
+            
+            const combinedSoC = batteryData.soc?.combined || 0;
+            const voltageSoC = batteryData.soc?.voltage || 0;
+            const coulombSoC = batteryData.soc?.coulomb || 0;
+            
+            const voltage = batteryData.voltage || 0;
+            const current = (batteryData.current || 0) / 1000;
+            const power = (batteryData.power || 0) / 1000;
+            const isCharging = batteryData.is_charging || false;
+            const isDischarging = batteryData.is_discharging || false;
+            const remainingMah = batteryData.remaining_mah || 0;
+            const timeRemaining = batteryData.time_remaining || 0;
+            
+            let displaySoC = combinedSoC;
+            if (combinedSoC === 0 && voltage > 0) {
+                displaySoC = calculateBatterySoC(voltage);
+                console.log(`🔋 Calculated SoC from voltage: ${voltage}V → ${displaySoC.toFixed(1)}%`);
+            }
+            
+            document.getElementById('batteryPercentage').textContent = displaySoC.toFixed(0) + '%';
+            
+            const batteryFill = document.getElementById('batteryFill');
+            const batteryLightning = document.getElementById('batteryLightning');
+            
+            batteryFill.style.width = displaySoC + '%';
+            
+            batteryFill.className = 'battery-fill';
+            
+            if (isCharging) {
+                batteryFill.classList.add('charging');
+                batteryLightning.classList.add('show');
+            } else {
+                batteryLightning.classList.remove('show');
+                
+                if (displaySoC <= 20) {
+                    batteryFill.classList.add('low');
+                } else if (displaySoC <= 60) {
+                    batteryFill.classList.add('medium');
+                } else {
+                    batteryFill.classList.add('high');
+                }
+            }
+            
+            const statusBadge = document.getElementById('batteryStatusBadge');
+            const statusText = document.getElementById('batteryStatusText');
+            
+            statusBadge.className = 'battery-status-badge';
+            
+            if (isCharging) {
+                statusBadge.classList.add('status-charging');
+                statusText.innerHTML = '<i class="fas fa-plug"></i> Charging';
+            } else if (isDischarging) {
+                statusBadge.classList.add('status-discharging');
+                statusText.innerHTML = '<i class="fas fa-arrow-down"></i> Discharging';
+            } else {
+                statusBadge.classList.add('status-idle');
+                statusText.innerHTML = '<i class="fas fa-pause"></i> Idle';
+            }
+            
+            document.getElementById('batteryVoltage').textContent = voltage.toFixed(2) + 'V';
+            document.getElementById('batteryCurrent').textContent = current.toFixed(2) + 'A';
+            document.getElementById('batteryPower').textContent = Math.abs(power).toFixed(1) + 'W';
+            
+            const calculatedRemainingMah = (displaySoC / 100) * BATTERY_CONFIG.CAPACITY_MAH;
+            const finalRemainingMah = remainingMah > 0 ? remainingMah : calculatedRemainingMah;
+            document.getElementById('batteryCapacityRemaining').textContent = finalRemainingMah.toFixed(0) + 'mAh';
+            
+            const timeRemainingElement = document.getElementById('batteryTimeRemaining');
+            if (timeRemaining > 0 && isDischarging) {
+                if (timeRemaining < 1) {
+                    timeRemainingElement.textContent = (timeRemaining * 60).toFixed(0) + 'm';
+                } else {
+                    timeRemainingElement.textContent = timeRemaining.toFixed(1) + 'h';
+                }
+            } else if (current > 0 && isDischarging && displaySoC > 0) {
+                const estimatedHours = finalRemainingMah / (current * 1000);
+                if (estimatedHours < 24) {
+                    timeRemainingElement.textContent = estimatedHours.toFixed(1) + 'h';
+                } else {
+                    timeRemainingElement.textContent = '∞';
+                }
+            } else {
+                timeRemainingElement.textContent = '∞';
+            }
+            
+            document.getElementById('socVoltage').textContent = voltageSoC.toFixed(1) + '%';
+            document.getElementById('socCoulomb').textContent = coulombSoC.toFixed(1) + '%';
+            document.getElementById('socCombined').textContent = displaySoC.toFixed(1) + '%';
+            
+            const batteryIcon = document.querySelector('.battery-icon i');
+            if (batteryIcon) {
+                batteryIcon.className = 'fas';
+                
+                if (displaySoC <= 10) {
+                    batteryIcon.classList.add('fa-battery-empty');
+                } else if (displaySoC <= 25) {
+                    batteryIcon.classList.add('fa-battery-quarter');
+                } else if (displaySoC <= 50) {
+                    batteryIcon.classList.add('fa-battery-half');
+                } else if (displaySoC <= 75) {
+                    batteryIcon.classList.add('fa-battery-three-quarters');
+                } else {
+                    batteryIcon.classList.add('fa-battery-full');
+                }
+            }
+            
+            document.getElementById('batteryVoltageRange').textContent = 
+                `${BATTERY_CONFIG.MIN_VOLTAGE}V - ${BATTERY_CONFIG.MAX_VOLTAGE}V`;
+                
+            console.log(`🔋 Battery: ${voltage.toFixed(2)}V, ${current.toFixed(2)}A, ${Math.abs(power).toFixed(1)}W, SoC: ${displaySoC.toFixed(1)}%, ${finalRemainingMah.toFixed(0)}mAh`);
+        }
+
+        // =================================================================
+        // ENERGY FLOW VISUALIZATION
         // =================================================================
         class EnergyFlowVisualization {
             constructor(canvasId) {
@@ -3526,7 +4743,6 @@
                 this.resize();
                 window.addEventListener('resize', () => this.resize());
                 
-                // 🔧 FIXED: Don't initialize with demo data, wait for real data
                 console.log('🔧 Energy Flow: Waiting for real ESP32 power data...');
             }
             
@@ -3545,7 +4761,6 @@
                 }
             }
             
-            // 🔧 FIXED: Only start animation when we have real data
             startAnimationLoop() {
                 if (this.animationId) {
                     cancelAnimationFrame(this.animationId);
@@ -3567,19 +4782,12 @@
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 
                 if (!this.hasRealData) {
-                    return; // Don't draw anything without real data
+                    return;
                 }
                 
-                // Draw static connections first
                 this.drawStaticConnections();
-                
-                // Draw active connections (only if we have real data)
                 this.drawActiveConnections();
-                
-                // Draw nodes
                 Object.values(this.nodes).forEach(node => this.drawNode(node));
-                
-                // Update and draw particles
                 this.updateParticles();
             }
             
@@ -3784,18 +4992,14 @@
                 }
             }
             
-            // 🔧 FIXED: Update method with real data detection
             update(powerSource, powers, validations) {
                 console.log('🔧 Energy Flow: Receiving ESP32 data', powers, validations);
                 
-                // Mark that we now have real data from ESP32
                 this.hasRealData = true;
                 
-                // Show canvas and hide no-data message
                 document.getElementById('energyNoData').style.display = 'none';
                 document.getElementById('energyCanvas').style.display = 'block';
                 
-                // Update node data with real ESP32 data
                 this.nodes.solar.power = powers.solar || 0;
                 this.nodes.solar.voltage = powers.solarV || 0;
                 this.nodes.solar.valid = validations.solar;
@@ -3810,7 +5014,6 @@
                 
                 this.nodes.home.power = powers.total || 0;
                 
-                // Start animation if not already running
                 if (!this.isInitialized) {
                     this.startAnimationLoop();
                 }
@@ -3854,7 +5057,6 @@
         // FACE RECOGNITION CAPTURE FUNCTIONS
         // =================================================================
         
-        // Enhanced Capture with Multiple Fallback Methods
         async function captureImageAdvanced(method = 'auto') {
             const startTime = Date.now();
             const captureId = `capture_${startTime}`;
@@ -3904,7 +5106,6 @@
             throw lastError || new Error('All capture methods failed');
         }
 
-        // Method 1: Enhanced Proxy Capture
         async function captureViaProxy(captureId) {
             console.log(`[${captureId}] Trying proxy method`);
             
@@ -3928,7 +5129,6 @@
             return blob;
         }
 
-        // Method 2: Direct HTTPS Capture (using API domain)
         async function captureViaDirectHTTPS(captureId) {
             console.log(`[${captureId}] Trying direct HTTPS method via API domain`);
             
@@ -3949,7 +5149,6 @@
             return await response.blob();
         }
 
-        // Method 3: Image Element Capture (using API domain)
         async function captureViaImageElement(captureId) {
             console.log(`[${captureId}] Trying image element method via API domain`);
             
@@ -3992,7 +5191,6 @@
             });
         }
 
-        // Method 4: Fetch with Custom Headers (using API domain)
         async function captureViaFetch(captureId) {
             console.log(`[${captureId}] Trying custom fetch method via API domain`);
             
@@ -4016,7 +5214,6 @@
         // FACE RECOGNITION ENROLLMENT FUNCTIONS
         // =================================================================
         
-        // Fixed Auto Enrollment System
         async function startFixedEnrollment() {
             const personName = document.getElementById('personName').value.trim();
             if (!personName) {
@@ -4041,7 +5238,7 @@
             const progressOverlay = document.getElementById('autoCaptureProgress');
             progressOverlay.style.display = 'block';
             
-            alertManager.show('face-auto-start', '🚀 Starting Auto Capture 5 photos with fixed system!', 'info', 3000);
+            alertManager.show('face-auto-start', '🚀 Starting Auto Capture 5 photos!', 'info', 3000);
             
             try {
                 await performAutoCapture();
@@ -4058,7 +5255,6 @@
             }
         }
 
-        // Enhanced Auto Capture Logic
         async function performAutoCapture() {
             const totalImages = 5;
             let successCount = 0;
@@ -4117,7 +5313,6 @@
             }
         }
 
-        // Utility Functions
         function sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
@@ -4128,10 +5323,9 @@
             alertManager.show('face-force-stop', '🛑 Force stopped auto capture!', 'warning');
         }
 
-        // Fixed Manual Capture
         async function manualCaptureFixed() {
             try {
-                alertManager.show('face-manual-start', '📸 Manual capture with fixed system...', 'info');
+                alertManager.show('face-manual-start', '📸 Manual capture...', 'info');
                 
                 const blob = await captureImageAdvanced('manual');
                 
@@ -4155,10 +5349,9 @@
             }
         }
 
-        // Fixed Recognition
         async function performRecognition() {
             try {
-                alertManager.show('face-recog-start', '🔍 Recognition with fixed system...', 'info');
+                alertManager.show('face-recog-start', '🔍 Recognition...', 'info');
                 
                 const blob = await captureImageAdvanced('recognition');
                 
@@ -4191,7 +5384,6 @@
             }
         }
 
-        // Instant Capture (for overlay button)
         async function instantCapture() {
             try {
                 const blob = await captureImageAdvanced('instant');
@@ -4262,26 +5454,25 @@
             forceStopCapture();
         }
 
-        // Stream management (using dedicated stream domain)
         function startStream() {
             const videoStream = document.getElementById('videoStream');
             const streamUrl = `${FACE_CONFIG.ESP32_STREAM_URL}/stream?t=${Date.now()}`;
             
-            alertManager.show('face-stream-start', '📡 Connecting to dedicated stream domain...', 'info', 2000);
+            alertManager.show('face-stream-start', '📡 Connecting to stream...', 'info', 2000);
             
             videoStream.src = streamUrl;
             videoStream.onload = () => {
-                alertManager.show('face-stream-connected', '✅ Stream started via dedicated TCP connection', 'success', 3000);
+                alertManager.show('face-stream-connected', '✅ Stream started', 'success', 3000);
             };
             
             videoStream.onerror = () => {
-                alertManager.show('face-stream-error', '❌ Stream failed - check ESP32-CAM stream domain', 'danger');
+                alertManager.show('face-stream-error', '❌ Stream failed - check ESP32-CAM', 'danger');
             };
         }
 
         function stopStream() {
             document.getElementById('videoStream').src = '';
-            alertManager.show('face-stream-stop', '⏹️ Stream stopped - API domain free for captures', 'info', 2000);
+            alertManager.show('face-stream-stop', '⏹️ Stream stopped', 'info', 2000);
         }
 
         function toggleFullscreen() {
@@ -4395,463 +5586,6 @@
         }
 
         // =================================================================
-        // FIREBASE USER MANAGEMENT SYSTEM
-        // =================================================================
-        
-        // Initialize default admin user in Firebase
-        async function initializeDefaultAdmin() {
-            try {
-                const adminRef = database.ref('/users/admin');
-                const snapshot = await adminRef.once('value');
-                
-                if (!snapshot.exists()) {
-                    console.log('🔥 Creating default admin user in Firebase...');
-                    await adminRef.set({
-                        password: 'admin123',
-                        displayName: 'Administrator',
-                        role: 'admin',
-                        createdAt: Date.now(),
-                        createdBy: 'system'
-                    });
-                    console.log('✅ Default admin user created');
-                }
-            } catch (error) {
-                console.error('❌ Error initializing admin user:', error);
-            }
-        }
-
-        // Load users from Firebase
-        async function loadUsersFromFirebase() {
-            try {
-                const snapshot = await database.ref('/users').once('value');
-                if (snapshot.exists()) {
-                    usersData = snapshot.val();
-                    console.log('🔥 Users loaded from Firebase:', Object.keys(usersData));
-                } else {
-                    console.log('🔥 No users found in Firebase');
-                    usersData = {};
-                }
-            } catch (error) {
-                console.error('❌ Error loading users from Firebase:', error);
-                usersData = {};
-            }
-        }
-
-        // Enhanced Login function with fallback
-        async function login(username, password) {
-            try {
-                console.log('🔥 Attempting login for:', username);
-                
-                const loginBtn = document.querySelector('#loginForm button');
-                const originalText = loginBtn.innerHTML;
-                loginBtn.innerHTML = '<div class="loading"></div> Logging in...';
-                loginBtn.disabled = true;
-                
-                if (username === 'admin' && password === 'admin123') {
-                    console.log('🔧 Using fallback admin login');
-                    currentUser = {
-                        username: 'admin',
-                        displayName: 'Administrator',
-                        role: 'admin'
-                    };
-                    
-                    localStorage.setItem('smartHomeCurrentUser', JSON.stringify(currentUser));
-                    showLoginAlert('✅ Login successful! (Fallback mode)', 'success');
-                    
-                    setTimeout(() => {
-                        showPage('dashboard');
-                        updateUserDisplay();
-                    }, 1000);
-                    
-                    return true;
-                }
-                
-                try {
-                    await loadUsersFromFirebase();
-                    
-                    if (usersData[username] && usersData[username].password === password) {
-                        currentUser = {
-                            username: username,
-                            displayName: usersData[username].displayName,
-                            role: usersData[username].role || 'member'
-                        };
-                        
-                        localStorage.setItem('smartHomeCurrentUser', JSON.stringify(currentUser));
-                        showLoginAlert('✅ Login successful!', 'success');
-                        
-                        setTimeout(() => {
-                            showPage('dashboard');
-                            updateUserDisplay();
-                        }, 1000);
-                        
-                        return true;
-                    }
-                } catch (firebaseError) {
-                    console.warn('Firebase login failed, trying fallback...', firebaseError);
-                    
-                    const fallbackUsers = {
-                        'admin': { password: 'admin123', displayName: 'Administrator', role: 'admin' },
-                        'test': { password: 'test123', displayName: 'Test User', role: 'member' }
-                    };
-                    
-                    if (fallbackUsers[username] && fallbackUsers[username].password === password) {
-                        currentUser = {
-                            username: username,
-                            displayName: fallbackUsers[username].displayName,
-                            role: fallbackUsers[username].role
-                        };
-                        
-                        localStorage.setItem('smartHomeCurrentUser', JSON.stringify(currentUser));
-                        showLoginAlert('✅ Login successful! (Offline mode)', 'success');
-                        
-                        setTimeout(() => {
-                            showPage('dashboard');
-                            updateUserDisplay();
-                        }, 1000);
-                        
-                        return true;
-                    }
-                }
-                
-                showLoginAlert('❌ Invalid username or password!', 'danger');
-                return false;
-                
-            } catch (error) {
-                console.error('❌ Login error:', error);
-                showLoginAlert('❌ Login error: ' + error.message, 'danger');
-                return false;
-            } finally {
-                const loginBtn = document.querySelector('#loginForm button');
-                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Login</span>';
-                loginBtn.disabled = false;
-            }
-        }
-
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('smartHomeCurrentUser');
-            showPage('login');
-            resetForms();
-            alertManager.show('logout', '👋 Logged out successfully', 'info', 2000);
-        }
-
-        async function checkAuth() {
-            const savedUser = localStorage.getItem('smartHomeCurrentUser');
-            if (savedUser) {
-                try {
-                    currentUser = JSON.parse(savedUser);
-                    
-                    await loadUsersFromFirebase();
-                    if (usersData[currentUser.username]) {
-                        showPage('dashboard');
-                        updateUserDisplay();
-                        return true;
-                    } else {
-                        localStorage.removeItem('smartHomeCurrentUser');
-                        currentUser = null;
-                        showLoginAlert('⚠️ Account no longer exists. Please login again.', 'warning');
-                    }
-                } catch (error) {
-                    console.error('❌ Auth check error:', error);
-                    localStorage.removeItem('smartHomeCurrentUser');
-                    currentUser = null;
-                }
-            }
-            return false;
-        }
-
-        function updateUserDisplay() {
-            if (currentUser) {
-                document.getElementById('userDisplayName').textContent = currentUser.displayName;
-                document.getElementById('userAvatar').textContent = currentUser.displayName.charAt(0).toUpperCase();
-                
-                if (currentUser.role === 'admin') {
-                    document.getElementById('adminPanelBtn').style.display = 'block';
-                } else {
-                    document.getElementById('adminPanelBtn').style.display = 'none';
-                }
-            }
-        }
-
-        // =================================================================
-        // FIREBASE USER MANAGEMENT (ADMIN ONLY)
-        // =================================================================
-        async function createUser(username, password, displayName) {
-            if (!currentUser || currentUser.role !== 'admin') {
-                showAdminAlert('❌ You do not have permission to perform this action!', 'danger');
-                return false;
-            }
-            
-            try {
-                console.log('🔥 Creating user:', username);
-                
-                const createBtn = document.querySelector('#createUserForm button');
-                const originalText = createBtn.innerHTML;
-                createBtn.innerHTML = '<div class="loading"></div> Creating...';
-                createBtn.disabled = true;
-                
-                const userRef = database.ref(`/users/${username}`);
-                const snapshot = await userRef.once('value');
-                
-                if (snapshot.exists()) {
-                    showAdminAlert('❌ Username already exists!', 'danger');
-                    return false;
-                }
-                
-                const userData = {
-                    password: password,
-                    displayName: displayName,
-                    role: 'member',
-                    createdAt: Date.now(),
-                    createdBy: currentUser.username
-                };
-                
-                await userRef.set(userData);
-                
-                usersData[username] = userData;
-                
-                showAdminAlert('✅ Member created successfully!', 'success');
-                updateMembersTable();
-                document.getElementById('createUserForm').reset();
-                
-                console.log('✅ User created successfully in Firebase');
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Create user error:', error);
-                showAdminAlert('❌ Error creating member: ' + error.message, 'danger');
-                return false;
-            } finally {
-                const createBtn = document.querySelector('#createUserForm button');
-                createBtn.innerHTML = '<i class="fas fa-user-plus"></i><span>Create Member</span>';
-                createBtn.disabled = false;
-            }
-        }
-
-        async function deleteUser(username) {
-            if (!currentUser || currentUser.role !== 'admin') {
-                showAdminAlert('❌ You do not have permission to perform this action!', 'danger');
-                return;
-            }
-            
-            if (username === 'admin') {
-                showAdminAlert('❌ Cannot delete admin account!', 'danger');
-                return;
-            }
-            
-            if (confirm(`🗑️ Are you sure you want to delete member "${username}"?\n\nThis action cannot be undone!`)) {
-                try {
-                    console.log('🔥 Deleting user:', username);
-                    
-                    await database.ref(`/users/${username}`).remove();
-                    
-                    delete usersData[username];
-                    
-                    showAdminAlert('✅ Member deleted successfully!', 'success');
-                    updateMembersTable();
-                    
-                    console.log('✅ User deleted successfully from Firebase');
-                    
-                } catch (error) {
-                    console.error('❌ Delete user error:', error);
-                    showAdminAlert('❌ Error deleting member: ' + error.message, 'danger');
-                }
-            }
-        }
-
-        async function updateMembersTable() {
-            const tbody = document.getElementById('membersTableBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;"><div class="loading"></div> Loading...</td></tr>';
-            
-            try {
-                await loadUsersFromFirebase();
-                
-                tbody.innerHTML = '';
-                
-                if (Object.keys(usersData).length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No members yet</td></tr>';
-                    return;
-                }
-                
-                Object.entries(usersData).forEach(([username, userData]) => {
-                    const row = document.createElement('tr');
-                    const createdDate = userData.createdAt ? 
-                        new Date(userData.createdAt).toLocaleDateString('en-US') : 
-                        'N/A';
-                    
-                    row.innerHTML = `
-                        <td>${username}</td>
-                        <td>${userData.displayName}</td>
-                        <td>
-                            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.8em; background: ${
-                                userData.role === 'admin' ? 'var(--danger-color)' : 'var(--primary-color)'
-                            }; color: white;">
-                                ${userData.role === 'admin' ? 'Administrator' : 'Member'}
-                            </span>
-                        </td>
-                        <td>${createdDate}</td>
-                        <td>
-                            ${username !== 'admin' ? 
-                                `<button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8em;" onclick="deleteUser('${username}')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>` : 
-                                '<span style="opacity: 0.5;">Cannot delete</span>'
-                            }
-                        </td>
-                    `;
-                    
-                    tbody.appendChild(row);
-                });
-                
-            } catch (error) {
-                console.error('❌ Error updating members table:', error);
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger-color);">❌ Error loading data</td></tr>';
-            }
-        }
-
-        // =================================================================
-        // ENHANCED BATTERY WIDGET FUNCTIONS - FIXED FOR 4S Li-ion
-        // =================================================================
-        
-        function calculateBatterySoC(voltage) {
-            const voltageCurve = [
-                [12.0, 0], [12.4, 3], [12.8, 8], [13.2, 15], [13.6, 25], [14.0, 40],
-                [14.4, 55], [14.8, 70], [15.2, 80], [15.6, 90], [16.0, 96], [16.8, 100]
-            ];
-            
-            if (voltage <= BATTERY_CONFIG.MIN_VOLTAGE) return 0;
-            if (voltage >= BATTERY_CONFIG.MAX_VOLTAGE) return 100;
-            
-            for (let i = 0; i < voltageCurve.length - 1; i++) {
-                if (voltage >= voltageCurve[i][0] && voltage <= voltageCurve[i + 1][0]) {
-                    const v1 = voltageCurve[i][0];
-                    const soc1 = voltageCurve[i][1];
-                    const v2 = voltageCurve[i + 1][0];
-                    const soc2 = voltageCurve[i + 1][1];
-                    
-                    const soc = soc1 + ((voltage - v1) / (v2 - v1)) * (soc2 - soc1);
-                    return Math.max(0, Math.min(100, soc));
-                }
-            }
-            
-            return 0;
-        }
-
-        function updateBatteryWidget(batteryData) {
-            if (!batteryData) return;
-            
-            const combinedSoC = batteryData.soc?.combined || 0;
-            const voltageSoC = batteryData.soc?.voltage || 0;
-            const coulombSoC = batteryData.soc?.coulomb || 0;
-            
-            const voltage = batteryData.voltage || 0;
-            const current = (batteryData.current || 0) / 1000;
-            const power = (batteryData.power || 0) / 1000;
-            const isCharging = batteryData.is_charging || false;
-            const isDischarging = batteryData.is_discharging || false;
-            const remainingMah = batteryData.remaining_mah || 0;
-            const timeRemaining = batteryData.time_remaining || 0;
-            
-            let displaySoC = combinedSoC;
-            if (combinedSoC === 0 && voltage > 0) {
-                displaySoC = calculateBatterySoC(voltage);
-                console.log(`🔋 Calculated SoC from voltage: ${voltage}V → ${displaySoC.toFixed(1)}%`);
-            }
-            
-            document.getElementById('batteryPercentage').textContent = displaySoC.toFixed(0) + '%';
-            
-            const batteryFill = document.getElementById('batteryFill');
-            const batteryLightning = document.getElementById('batteryLightning');
-            
-            batteryFill.style.width = displaySoC + '%';
-            
-            batteryFill.className = 'battery-fill';
-            
-            if (isCharging) {
-                batteryFill.classList.add('charging');
-                batteryLightning.classList.add('show');
-            } else {
-                batteryLightning.classList.remove('show');
-                
-                if (displaySoC <= 20) {
-                    batteryFill.classList.add('low');
-                } else if (displaySoC <= 60) {
-                    batteryFill.classList.add('medium');
-                } else {
-                    batteryFill.classList.add('high');
-                }
-            }
-            
-            const statusBadge = document.getElementById('batteryStatusBadge');
-            const statusText = document.getElementById('batteryStatusText');
-            
-            statusBadge.className = 'battery-status-badge';
-            
-            if (isCharging) {
-                statusBadge.classList.add('status-charging');
-                statusText.innerHTML = '<i class="fas fa-plug"></i> Charging';
-            } else if (isDischarging) {
-                statusBadge.classList.add('status-discharging');
-                statusText.innerHTML = '<i class="fas fa-arrow-down"></i> Discharging';
-            } else {
-                statusBadge.classList.add('status-idle');
-                statusText.innerHTML = '<i class="fas fa-pause"></i> Idle';
-            }
-            
-            document.getElementById('batteryVoltage').textContent = voltage.toFixed(2) + 'V';
-            document.getElementById('batteryCurrent').textContent = current.toFixed(2) + 'A';
-            document.getElementById('batteryPower').textContent = Math.abs(power).toFixed(1) + 'W';
-            
-            const calculatedRemainingMah = (displaySoC / 100) * BATTERY_CONFIG.CAPACITY_MAH;
-            const finalRemainingMah = remainingMah > 0 ? remainingMah : calculatedRemainingMah;
-            document.getElementById('batteryCapacityRemaining').textContent = finalRemainingMah.toFixed(0) + 'mAh';
-            
-            const timeRemainingElement = document.getElementById('batteryTimeRemaining');
-            if (timeRemaining > 0 && isDischarging) {
-                if (timeRemaining < 1) {
-                    timeRemainingElement.textContent = (timeRemaining * 60).toFixed(0) + 'm';
-                } else {
-                    timeRemainingElement.textContent = timeRemaining.toFixed(1) + 'h';
-                }
-            } else if (current > 0 && isDischarging && displaySoC > 0) {
-                const estimatedHours = finalRemainingMah / (current * 1000);
-                if (estimatedHours < 24) {
-                    timeRemainingElement.textContent = estimatedHours.toFixed(1) + 'h';
-                } else {
-                    timeRemainingElement.textContent = '∞';
-                }
-            } else {
-                timeRemainingElement.textContent = '∞';
-            }
-            
-            document.getElementById('socVoltage').textContent = voltageSoC.toFixed(1) + '%';
-            document.getElementById('socCoulomb').textContent = coulombSoC.toFixed(1) + '%';
-            document.getElementById('socCombined').textContent = displaySoC.toFixed(1) + '%';
-            
-            const batteryIcon = document.querySelector('.battery-icon i');
-            if (batteryIcon) {
-                batteryIcon.className = 'fas';
-                
-                if (displaySoC <= 10) {
-                    batteryIcon.classList.add('fa-battery-empty');
-                } else if (displaySoC <= 25) {
-                    batteryIcon.classList.add('fa-battery-quarter');
-                } else if (displaySoC <= 50) {
-                    batteryIcon.classList.add('fa-battery-half');
-                } else if (displaySoC <= 75) {
-                    batteryIcon.classList.add('fa-battery-three-quarters');
-                } else {
-                    batteryIcon.classList.add('fa-battery-full');
-                }
-            }
-            
-            document.getElementById('batteryVoltageRange').textContent = 
-                `${BATTERY_CONFIG.MIN_VOLTAGE}V - ${BATTERY_CONFIG.MAX_VOLTAGE}V`;
-                
-            console.log(`🔋 Battery: ${voltage.toFixed(2)}V, ${current.toFixed(2)}A, ${Math.abs(power).toFixed(1)}W, SoC: ${displaySoC.toFixed(1)}%, ${finalRemainingMah.toFixed(0)}mAh`);
-        }
-
-        // =================================================================
         // UI FUNCTIONS
         // =================================================================
         function showPage(pageName) {
@@ -4864,17 +5598,15 @@
             } else if (pageName === 'dashboard') {
                 document.getElementById('dashboardPage').classList.add('active');
                 
-                // Initialize Firebase connection immediately
                 initializeFirebaseApp();
                 
-                // 🔧 FIXED: Don't initialize energy flow with demo data
                 setTimeout(() => {
                     initializeEnergyFlowVisualization();
                     initializeCharts();
                     updateWeather();
+                    loadSettingsData();
                 }, 100);
                 
-                // Initialize Face Recognition components when dashboard loads
                 setTimeout(() => {
                     initializeFaceRecognition();
                 }, 200);
@@ -4889,9 +5621,6 @@
             }
         }
 
-        // =================================================================
-        // FACE RECOGNITION INITIALIZATION
-        // =================================================================
         function initializeFaceRecognition() {
             console.log('🤖 Initializing Face Recognition System...');
             
@@ -4911,9 +5640,6 @@
             }
         }
 
-        // =================================================================
-        // FIREBASE INITIALIZATION
-        // =================================================================
         async function initializeFirebaseApp() {
             try {
                 console.log('🔥 Initializing Firebase connection...');
@@ -4928,7 +5654,7 @@
                 await database.ref('test/connection').set({
                     timestamp: Date.now(),
                     user: currentUser?.username || 'anonymous',
-                    message: 'Dashboard v3.2 Enhanced Battery SoC + Face Recognition connected'
+                    message: 'Dashboard v4.0 Complete Integration connected'
                 });
                 
                 console.log('✅ Firebase connected successfully');
@@ -4968,6 +5694,9 @@
                         startStream();
                     }
                 }, 100);
+            } else if (tabName === 'settings') {
+                document.getElementById('settingsTab').classList.add('active');
+                loadSettingsData();
             }
         }
 
@@ -4999,16 +5728,6 @@
             }, 5000);
         }
 
-        function resetForms() {
-            document.getElementById('loginForm').reset();
-            if (document.getElementById('createUserForm')) {
-                document.getElementById('createUserForm').reset();
-            }
-        }
-
-        // =================================================================
-        // PARTICLE SYSTEM
-        // =================================================================
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
             const particleCount = 50;
@@ -5023,6 +5742,60 @@
             }
         }
 
+        // Load settings data
+        function loadSettingsData() {
+            // Load temperature settings
+            database.ref('/settings/temperatureThreshold').once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    const threshold = snapshot.val();
+                    systemState.temperatureThreshold = threshold;
+                    document.getElementById('tempThresholdSlider').value = threshold;
+                    document.getElementById('tempThresholdDisplay').textContent = threshold + '°C';
+                }
+            });
+            
+            database.ref('/settings/autoTemperatureEnabled').once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    const enabled = snapshot.val();
+                    systemState.autoTemperatureEnabled = enabled;
+                    updateTemperatureControlUI(enabled);
+                }
+            });
+            
+            // Load gas settings
+            database.ref('/settings/gasThresholds').once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    const thresholds = snapshot.val();
+                    systemState.gasThresholds = thresholds;
+                    
+                    document.getElementById('gasThreshold1').value = thresholds.warning || 200;
+                    document.getElementById('gasThreshold2').value = thresholds.alert || 500;
+                    document.getElementById('gasThreshold3').value = thresholds.danger || 800;
+                }
+            });
+            
+            // Load current sensor values
+            database.ref('/sensors').once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    const sensors = snapshot.val();
+                    
+                    if (sensors.temperature) {
+                        systemState.currentTemperature = sensors.temperature;
+                        document.getElementById('currentTempDisplay').textContent = sensors.temperature.toFixed(1) + '°C';
+                        updateTemperatureStatus();
+                    }
+                    
+                    if (sensors.gas && sensors.gas.ppm !== undefined) {
+                        updateGasDisplay(sensors.gas.ppm, sensors.gas.isCalibrated || false);
+                    }
+                }
+            });
+            
+            alertManager.show('settings-loaded', '⚙️ Settings loaded successfully', 'success', 2000);
+        }
+
+        // Continue with remaining functions...
+
         // =================================================================
         // DEVICE CONTROL FUNCTIONS
         // =================================================================
@@ -5031,6 +5804,13 @@
                 await database.ref('/gate/command').set(command);
                 alertManager.show('gate-command', `✅ Gate ${command === 'open' ? 'open' : 'close'} command sent`, 'success', 2000);
                 console.log(`🚪 Gate command sent: ${command}`);
+                
+                // Trigger auto light activation when gate opens successfully
+                if (command === 'open' && systemState.autoLightEnabled) {
+                    setTimeout(() => {
+                        triggerAutoLightActivation('gate_open_command');
+                    }, 1000);
+                }
                 
                 document.getElementById('btn-open').disabled = true;
                 document.getElementById('btn-close').disabled = true;
@@ -5078,8 +5858,15 @@
                     console.log(`⚡ Command sent successfully: ${device} = ${newState}`);
                     alertManager.show('device-control', 
                         `✅ ${device.replace(/(\d+)/, ' $1')} ${newState ? 'turned on' : 'turned off'}`, 
-                        'success', 3000);
+                        'success', 2000);
                     pendingCommands.delete(device);
+                    
+                    // Log manual override for auto control history
+                    logAutoControlEvent('manual_override', {
+                        device: device,
+                        action: newState ? 'turned_on' : 'turned_off',
+                        user: currentUser?.username || 'unknown'
+                    });
                 })
                 .catch((error) => {
                     console.error('⚠️ Error sending command:', error);
@@ -5515,7 +6302,7 @@
         };
 
         // =================================================================
-        // 🔧 FIXED: ENERGY FLOW VISUALIZATION INITIALIZATION
+        // ENERGY FLOW VISUALIZATION INITIALIZATION
         // =================================================================
         function initializeEnergyFlowVisualization() {
             console.log('🔧 Initializing Energy Flow Visualization - WAITING for ESP32 data...');
@@ -5924,28 +6711,31 @@
         }
 
         // =================================================================
-        // 🔥 FIXED: FIREBASE LISTENERS WITH GAS ALERT SUPPORT
+        // FIREBASE LISTENERS WITH INTEGRATED AUTO CONTROLS
         // =================================================================
         function setupFirebaseListeners() {
-            // Gate status listener
+            // Gate status listener with auto light trigger
             database.ref('/gate/status').on('value', (snapshot) => {
                 const status = snapshot.val() || 'unknown';
                 updateGateStatus(status);
+                
+                // Trigger auto light when gate opens successfully
+                if (status === 'open' && systemState.autoLightEnabled) {
+                    triggerAutoLightActivation('gate_opened_successfully');
+                }
             });
             
-            // Temperature listener
+            // Temperature listener with auto control
             database.ref('/sensors/temperature').on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     const temp = snapshot.val();
+                    systemState.currentTemperature = temp;
                     document.getElementById('tempValue').textContent = temp.toFixed(1);
+                    document.getElementById('currentTempDisplay').textContent = temp.toFixed(1) + '°C';
                     latestSensorValues.temp = temp;
                     latestSensorValues.lastTempTime = Date.now();
                     
-                    if (sensorData.temp.length > 0) {
-                        sensorData.temp[sensorData.temp.length - 1] = temp;
-                        updateSensorCharts();
-                    }
-                    
+                    updateTemperatureStatus();
                     addSensorData('temp', temp);
                 }
             });
@@ -5954,20 +6744,16 @@
             database.ref('/sensors/humidity').on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     const humid = snapshot.val();
+                    systemState.currentHumidity = humid;
                     document.getElementById('humidValue').textContent = humid.toFixed(1);
                     latestSensorValues.humid = humid;
                     latestSensorValues.lastHumidTime = Date.now();
-                    
-                    if (sensorData.humid.length > 0) {
-                        sensorData.humid[sensorData.humid.length - 1] = humid;
-                        updateSensorCharts();
-                    }
                     
                     addSensorData('humid', humid);
                 }
             });
             
-            // 🔥 FIXED: Gas sensor listener with alert processing
+            // Gas sensor listener with enhanced PPM display and alerts
             database.ref('/sensors/gas').on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     const gasData = snapshot.val();
@@ -5976,24 +6762,27 @@
                     const isCalibrated = gasData.isCalibrated || false;
                     
                     updateGasStatus(isCalibrated, gasPPM, gasValue);
+                    updateGasDisplay(gasPPM, isCalibrated);
                     
                     if (charts.gas) {
+                        sensorData.gas.push(gasPPM);
+                        if (sensorData.gas.length > 20) sensorData.gas.shift();
                         charts.gas.data.labels = [...sensorData.timestamps];
                         charts.gas.data.datasets[0].data = [...sensorData.gas];
                         charts.gas.update('none');
                     }
                     
-                    // 🔥 FIXED: Process gas alerts from sensor data
-                    if (isCalibrated && gasPPM > 200) {
-                        const level = gasPPM > 800 ? 'DANGER' : 'WARNING';
+                    // Process gas alerts from sensor data
+                    if (isCalibrated && gasPPM > systemState.gasThresholds.warning) {
+                        const level = gasPPM > systemState.gasThresholds.danger ? 'DANGER' : 'WARNING';
                         updateGasAlertStatus(level, gasPPM, `Gas level: ${gasPPM.toFixed(0)} ppm`);
-                    } else if (gasPPM <= 200 * 0.8) {
+                    } else if (gasPPM <= systemState.gasThresholds.warning * 0.8) {
                         updateGasAlertStatus('NORMAL', gasPPM, 'Gas level normal');
                     }
                 }
             });
             
-            // 🔥 FIXED: Gas alerts listener (from ESP32 alerts)
+            // Gas alerts listener (from ESP32 alerts)
             database.ref('/alerts').on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     const alerts = snapshot.val();
@@ -6001,11 +6790,9 @@
                     if (alerts.gasHigh && alerts.gasLevel && alerts.gasMessage) {
                         console.log('🔥 Gas alert from ESP32:', alerts);
                         
-                        // Update gas alert status
                         const ppm = parseFloat(alerts.gasMessage.match(/(\d+(?:\.\d+)?)\s*ppm/)?.[1] || '0');
                         updateGasAlertStatus(alerts.gasLevel, ppm, alerts.gasMessage);
                         
-                        // Show notification based on level
                         if (alerts.gasLevel === 'DANGER') {
                             alertManager.show('esp32-gas-danger', 
                                 `🚨 ESP32 GAS DANGER! ${alerts.gasMessage}`, 
@@ -6016,7 +6803,6 @@
                                 'warning', 10000);
                         }
                     } else if (alerts.gasHigh === false && alerts.gasLevel === 'NORMAL') {
-                        // Clear gas alert
                         updateGasAlertStatus('NORMAL', 0, 'Gas level normal');
                     }
                 }
@@ -6029,7 +6815,7 @@
                 }
             });
             
-            // 🔧 FIXED: Power data listeners - Show energy flow when data available
+            // Power data listeners - Show energy flow when data available
             database.ref('/power').on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     const powerData = snapshot.val();
@@ -6039,16 +6825,13 @@
                     const adapterPower = powerData.adapter?.power || 0;
                     const totalPower = powerData.totalPower || 0;
                     
-                    // Enhanced validation
                     energyFlowState.powerValidation.solar = powerData.solar?.isValid || false;
                     energyFlowState.powerValidation.battery = powerData.battery?.isValid || false;
                     energyFlowState.powerValidation.adapter = powerData.adapter?.isValid || false;
                     
-                    // 🔧 FIXED: Show energy flow UI when data is available
                     if (!energyFlowState.hasData) {
                         energyFlowState.hasData = true;
                         
-                        // Show energy flow components
                         document.getElementById('powerSourceIndicator').classList.add('data-available');
                         document.getElementById('energyStats').classList.add('data-available');
                         
@@ -6077,7 +6860,6 @@
                     energyFlowState.currentPowerSource = powerData.currentSource || 0;
                     updatePowerSourceIndicator(energyFlowState.currentPowerSource, totalPower);
                     
-                    // Update energy flow with real ESP32 data
                     if (energyFlowAnimation) {
                         energyFlowAnimation.update(energyFlowState.currentPowerSource, {
                             solar: solarPower / 1000,
@@ -6129,6 +6911,35 @@
                 }
             });
             
+            // Auto Control Settings Listeners
+            database.ref('/settings/temperatureThreshold').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const threshold = snapshot.val();
+                    systemState.temperatureThreshold = threshold;
+                    document.getElementById('tempThresholdSlider').value = threshold;
+                    document.getElementById('tempThresholdDisplay').textContent = threshold + '°C';
+                }
+            });
+            
+            database.ref('/settings/autoTemperatureEnabled').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const enabled = snapshot.val();
+                    systemState.autoTemperatureEnabled = enabled;
+                    updateTemperatureControlUI(enabled);
+                }
+            });
+            
+            database.ref('/settings/gasThresholds').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const thresholds = snapshot.val();
+                    systemState.gasThresholds = thresholds;
+                    
+                    document.getElementById('gasThreshold1').value = thresholds.warning || 200;
+                    document.getElementById('gasThreshold2').value = thresholds.alert || 500;
+                    document.getElementById('gasThreshold3').value = thresholds.danger || 800;
+                }
+            });
+            
             // Device state listeners
             ['light1', 'light2', 'light3', 'light4', 'fan1', 'fan2', 'fan3', 'autoLight'].forEach(device => {
                 database.ref(`/devices/${device}/state`).on('value', (snapshot) => {
@@ -6157,6 +6968,7 @@
             database.ref('/history').limitToLast(50).on('value', (snapshot) => {
                 const history = snapshot.val() || {};
                 updateHistoryTable(history);
+                updateAutoControlHistory(history);
             });
             
             // Camera listeners
@@ -6189,6 +7001,32 @@
                 if (snapshot.exists()) {
                     const status = snapshot.val();
                     updateConnectionStatus(status === 'online');
+                }
+            });
+
+            // RFID Authentication Success Listener - Trigger Auto Lights
+            database.ref('/events/rfid_success').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const rfidEvent = snapshot.val();
+                    console.log('🎫 RFID Authentication Success:', rfidEvent);
+                    
+                    // Trigger auto light activation
+                    if (systemState.autoLightEnabled) {
+                        triggerAutoLightActivation('rfid_authentication_success');
+                    }
+                }
+            });
+
+            // Face Recognition Success Listener - Trigger Auto Lights
+            database.ref('/events/face_recognition_success').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const faceEvent = snapshot.val();
+                    console.log('🤖 Face Recognition Success:', faceEvent);
+                    
+                    // Trigger auto light activation
+                    if (systemState.autoLightEnabled) {
+                        triggerAutoLightActivation('face_recognition_success');
+                    }
                 }
             });
         }
@@ -6260,7 +7098,7 @@
             details.textContent = `${totalPower.toFixed(1)} W`;
         }
 
-        // 🔥 FIXED: Update Gas Status with enhanced visual alerts
+        // Update Gas Status with enhanced visual alerts
         function updateGasStatus(isCalibrated, gasPPM, gasValue) {
             const gasStatus = document.getElementById('gasStatus');
             const gasItem = document.getElementById('gasItem');
@@ -6268,7 +7106,7 @@
             gasItem.classList.remove('gas-alert', 'gas-warning');
             
             if (!isCalibrated) {
-                gasStatus.textContent = 'Starting up...';
+                gasStatus.textContent = 'Calibrating...';
                 gasStatus.className = 'sensor-status warming';
                 sensorData.gas.push(0);
                 if (sensorData.gas.length > 20) sensorData.gas.shift();
@@ -6278,13 +7116,21 @@
                 sensorData.gas.push(gasPPM);
                 if (sensorData.gas.length > 20) sensorData.gas.shift();
                 
-                if (gasPPM > 800) {
+                const thresholds = systemState.gasThresholds;
+                
+                if (gasPPM > thresholds.danger) {
                     gasStatus.textContent = 'DANGER!';
                     gasStatus.className = 'sensor-status';
                     gasStatus.style.background = '#ef4444';
                     gasStatus.style.color = '#fff';
                     gasItem.classList.add('gas-alert');
-                } else if (gasPPM > 200) {
+                } else if (gasPPM > thresholds.alert) {
+                    gasStatus.textContent = 'Alert';
+                    gasStatus.className = 'sensor-status';
+                    gasStatus.style.background = '#ff6b35';
+                    gasStatus.style.color = '#fff';
+                    gasItem.classList.add('gas-warning');
+                } else if (gasPPM > thresholds.warning) {
                     gasStatus.textContent = 'Warning';
                     gasStatus.className = 'sensor-status';
                     gasStatus.style.background = '#fbbf24';
@@ -6305,10 +7151,15 @@
         document.addEventListener('DOMContentLoaded', async () => {
             createParticles();
             
-            console.log('🔋 Smart Home System v3.2 + AI Face Recognition - FIXED VERSION');
-            console.log('🔥 FIXED: Gas Alert System - Dashboard now listens to ESP32 alerts');
-            console.log('⚡ FIXED: Energy Flow - No demo data, waits for real ESP32 INA219 data');
-            console.log('🤖 Face Recognition Features: Domain Separation + Auto Capture + Fixed Recognition');
+            console.log('🏠 Smart Home Enhanced v4.0 - Complete Integration');
+            console.log('🔧 Integrated Features:');
+            console.log('   ✅ Auto Temperature Control: ESP32 reads DHT22, controls fan with hysteresis');
+            console.log('   ✅ 3-Level Gas Detection: MQ-2 sensor with accurate PPM calculation and dashboard alerts');
+            console.log('   ✅ Auto Light Control: Lights activate after successful RFID/Face auth');
+            console.log('   ✅ Manual Control: Full manual control via Home Control tab');
+            console.log('   ✅ Real-time Monitoring: Live sensor data and control history');
+            console.log('   ✅ Firebase Integration: Seamless ESP32 ↔ Dashboard communication');
+            console.log('🤖 Face Recognition: Enhanced capture + auto enrollment + AI recognition');
             
             if (!(await checkAuth())) {
                 showPage('login');
@@ -6344,6 +7195,27 @@
                 });
             }
 
+            // Temperature slider real-time update
+            const tempSlider = document.getElementById('tempThresholdSlider');
+            if (tempSlider) {
+                tempSlider.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    document.getElementById('tempThresholdDisplay').textContent = value + '°C';
+                });
+            }
+
+            // Gas threshold validation
+            ['gasThreshold1', 'gasThreshold2', 'gasThreshold3'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('change', (e) => {
+                        const value = parseInt(e.target.value);
+                        if (value < 50) e.target.value = 50;
+                        if (value > 2000) e.target.value = 2000;
+                    });
+                }
+            });
+
             // Set today's date for filter
             const today = new Date();
             const dateString = today.getFullYear() + '-' + 
@@ -6366,9 +7238,16 @@
                 }
             }, 10000);
 
-            console.log('🚀 FIXED Smart Home System + Face Recognition ready!');
-            console.log('🔥 Gas alerts will now show on dashboard when ESP32 detects leaks');
-            console.log('⚡ Energy flow will display when ESP32 sends real INA219 power data');
+            console.log('🚀 Smart Home System v4.0 Complete Integration ready!');
+            console.log('📋 Integrated Features:');
+            console.log('   ✅ Auto Temperature Control (16-40°C with ±0.5°C hysteresis)');
+            console.log('   ✅ 3-Level Gas Detection (Warning/Alert/Danger with auto fans)');
+            console.log('   ✅ Auto Light Control (Living Room + Garage after auth)');
+            console.log('   ✅ Manual Device Control (via Home Control tab)');
+            console.log('   ✅ Real-time monitoring and control history');
+            console.log('   ✅ Enhanced Face Recognition with auto capture');
+            console.log('   ✅ Accurate PPM gas display with dashboard alerts');
+            console.log('🎯 RESULT: Fully integrated Smart Home Dashboard with all features!');
         });
 
         // ESC key handler for face recognition
@@ -6385,26 +7264,57 @@
             }
         });
 
-        // Global functions
+        // Prevent form submission on Enter in number inputs
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && event.target.type === 'number') {
+                event.preventDefault();
+                event.target.blur();
+            }
+        });
+
+        // =================================================================
+        // GLOBAL FUNCTION EXPORTS
+        // =================================================================
+        
+        // Authentication
         window.login = login;
         window.logout = logout;
         window.showPage = showPage;
         window.switchTab = switchTab;
-        window.controlGate = controlGate;
+        
+        // Device Controls
         window.toggleHomeDevice = toggleHomeDevice;
+        window.controlGate = controlGate;
+        
+        // Temperature Controls
+        window.toggleTemperatureControl = toggleTemperatureControl;
+        window.saveTemperatureSettings = saveTemperatureSettings;
+        
+        // Gas Controls
+        window.saveGasSettings = saveGasSettings;
+        window.resetGasSettings = resetGasSettings;
+        
+        // System Controls
+        window.refreshHistory = refreshHistory;
+        window.loadSettingsData = loadSettingsData;
+        
+        // User Management
         window.createUser = createUser;
         window.deleteUser = deleteUser;
+        
+        // RFID Functions
         window.startRfidScan = startRfidScan;
         window.stopRfidScan = stopRfidScan;
         window.addRfidCard = addRfidCard;
         window.removeRfidCard = removeRfidCard;
         window.clearAllRfidCards = clearAllRfidCards;
+        
+        // Camera Functions
         window.testMotionDetection = testMotionDetection;
         window.capturePhoto = capturePhoto;
         window.toggleCameraStream = toggleCameraStream;
         window.applyHistoryFilter = applyHistoryFilter;
-        window.alertManager = alertManager;
-
+        
         // Face Recognition Global Functions
         window.startFixedEnrollment = startFixedEnrollment;
         window.stopEnrollment = stopEnrollment;
@@ -6419,29 +7329,24 @@
         window.startStream = startStream;
         window.stopStream = stopStream;
         window.toggleFullscreen = toggleFullscreen;
+        
+        // Utilities
+        window.alertManager = alertManager;
 
-        console.log('🔋 Smart Home Enhanced Battery SoC System v3.2 + AI Face Recognition - FIXED READY!');
-        console.log('📋 Default Admin Account (stored in Firebase):');
+        console.log('🏠 Smart Home Enhanced v4.0 - Complete Integration READY!');
+        console.log('📋 Default Admin Account:');
         console.log('   Username: admin');
         console.log('   Password: admin123');
-        console.log('🔧 FIXED Issues:');
-        console.log('   ✅ Gas Alert System: ESP32 alerts now show on dashboard with visual indicators');
-        console.log('   ✅ Energy Flow Logic: No demo data, waits for real ESP32 INA219 power readings');
-        console.log('   ✅ Power validation uses actual INA219 isValid flags from ESP32');
-        console.log('   ✅ Energy stats hidden until ESP32 data available');
-        console.log('   ✅ Gas alerts trigger visual warnings and notifications');
-        console.log('   ✅ Face recognition with enhanced capture methods');
-        console.log('🔥 Gas Alert Features:');
-        console.log('   ✅ Real-time monitoring from ESP32 MQ-2 sensor');
-        console.log('   ✅ Visual gas alert status indicator');
-        console.log('   ✅ Dashboard notifications for WARNING and DANGER levels');
-        console.log('   ✅ Kitchen sensor animation during gas alerts');
-        console.log('⚡ Energy Flow Features:');
-        console.log('   ✅ Displays "Waiting for Power Data" until ESP32 connects');
-        console.log('   ✅ Shows energy flow only when INA219 data is valid');
-        console.log('   ✅ Uses real voltage/current/power from ESP32 sensors');
-        console.log('   ✅ Accurate power source detection based on ESP32 logic');
-        console.log('🎯 RESULT: Fully functional Smart Home Dashboard with accurate sensor integration!');
+        console.log('🎯 INTEGRATED FEATURES:');
+        console.log('   ✅ Auto Temperature Control: ESP32 controls fans based on threshold');
+        console.log('   ✅ Auto Light Control: Living Room + Garage lights after RFID/Face auth');
+        console.log('   ✅ Enhanced Gas Detection: Accurate PPM display with dashboard alerts');
+        console.log('   ✅ 3-Level Gas Control: Customizable thresholds with auto fan response');
+        console.log('   ✅ Face Recognition: Auto capture + AI enrollment + recognition');
+        console.log('   ✅ Real-time Monitoring: Live sensor data, charts, and history');
+        console.log('   ✅ Manual Override: Full manual control via Home Control tab');
+        console.log('🔥 COMPLETE INTEGRATION: All features from both codes successfully merged!');
+
     </script>
 </body>
 </html>
